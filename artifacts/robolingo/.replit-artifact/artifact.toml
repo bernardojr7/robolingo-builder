@@ -1,0 +1,24 @@
+kind = "mobile"
+previewPath = "/"
+title = "Robolingo"
+description = "Aplicativo mobile gamificado para aprender inglês através de missões, temas favoritos, progresso e quizzes personalizados para estudantes."
+version = "1.0.0"
+id = "artifacts/robolingo"
+router = "expo-domain"
+
+[[services]]
+name = "expo"
+ensurePreviewReachable = "/status"
+paths = [ "/" ]
+localPort = 20580
+
+[services.development]
+run = "pnpm --filter @workspace/robolingo run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/robolingo", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/robolingo", "run", "serve" ]
+
+[services.env]
+PORT = "20580"
+BASE_PATH = "/"
