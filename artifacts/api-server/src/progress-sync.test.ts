@@ -18,6 +18,32 @@ import { createApp } from "./app";
 
 const testUserId = `clerk-test-${randomUUID()}`;
 const testToken = "clerk-test-token";
+const isolationUsers = {
+  teacherOne: `clerk-test-teacher-one-${randomUUID()}`,
+  teacherTwo: `clerk-test-teacher-two-${randomUUID()}`,
+  studentOne: `clerk-test-student-one-${randomUUID()}`,
+  studentTwo: `clerk-test-student-two-${randomUUID()}`,
+  nonTeacher: `clerk-test-non-teacher-${randomUUID()}`,
+  legacyTeacher: `clerk-test-legacy-teacher-${randomUUID()}`,
+};
+const isolationTokens = {
+  teacherOne: "clerk-test-teacher-one-token",
+  teacherTwo: "clerk-test-teacher-two-token",
+  studentOne: "clerk-test-student-one-token",
+  studentTwo: "clerk-test-student-two-token",
+  nonTeacher: "clerk-test-non-teacher-token",
+  legacyTeacher: "clerk-test-legacy-teacher-token",
+};
+const testUsersByToken = new Map<string, string>([
+  [testToken, testUserId],
+  [isolationTokens.teacherOne, isolationUsers.teacherOne],
+  [isolationTokens.teacherTwo, isolationUsers.teacherTwo],
+  [isolationTokens.studentOne, isolationUsers.studentOne],
+  [isolationTokens.studentTwo, isolationUsers.studentTwo],
+  [isolationTokens.nonTeacher, isolationUsers.nonTeacher],
+  [isolationTokens.legacyTeacher, isolationUsers.legacyTeacher],
+]);
+const isolationUserIds = Object.values(isolationUsers);
 
 function makeLocalState(): SyncablePlayerState {
   return {
@@ -113,13 +139,16 @@ describe("progress API authentication and persistence", () => {
   let baseUrl = "";
 
   before(async () => {
-    await db.delete(progressTable).where(eq(progressTable.userId, testUserId));
+    for (const userId of [testUserId, ...isolationUserIds]) {
+      await db.delete(progressTable).where(eq(progressTable.userId, userId));
+    }
 
     const testVerifier = (async (token: string) => {
-      if (token !== testToken) {
+      const userId = testUsersByToken.get(token);
+      if (!userId) {
         throw new Error("invalid test token");
       }
-      return { sub: testUserId };
+      return { sub: userId };
     }) as unknown as typeof verifyToken;
 
     const app = createApp(createProgressRouter(createRequireAuth(testVerifier)));
@@ -132,7 +161,9 @@ describe("progress API authentication and persistence", () => {
   });
 
   after(async () => {
-    await db.delete(progressTable).where(eq(progressTable.userId, testUserId));
+    for (const userId of [testUserId, ...isolationUserIds]) {
+      await db.delete(progressTable).where(eq(progressTable.userId, userId));
+    }
     await new Promise<void>((resolve, reject) => {
       server.close((error) => (error ? reject(error) : resolve()));
     });
@@ -192,5 +223,173 @@ describe("progress API authentication and persistence", () => {
     });
 
     assert.equal(response.status, 401);
+  });
+
+  it("keeps each teacher's student list isolated by class code", async () => {
+    const teacherPayload = (name: string) => ({
+      name,
+      role: "teacher" as const,
+      teacherClassName: name,
+      teacherClassCode: "",
+      level: 1,
+      xp: 0,
+      xpNextLevel: 100,
+      coins: 0,
+      gems: 0,
+      streakDays: 0,
+      completedMissions: 0,
+      selectedThemes: [],
+      ownedItems: [],
+    });
+    const studentPayload = (
+      name: string,
+      teacherClassCode: string,
+    ) => ({
+      ...teacherPayload(name),
+      role: "student" as const,
+      teacherClassCode,
+    });
+    const putProgress = async (token: string, payload: object) =>
+      fetch(`${baseUrl}/progress/me`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+    const getStudents = (token: string) =>
+      fetch(`${baseUrl}/progress/students`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+    const teacherOneResponse = await putProgress(
+      isolationTokens.teacherOne,
+      teacherPayload("Professor 1"),
+    );
+    const teacherTwoResponse = await putProgress(
+      isolationTokens.teacherTwo,
+      teacherPayload("Professor 2"),
+    );
+    assert.equal(teacherOneResponse.status, 200);
+    assert.equal(teacherTwoResponse.status, 200);
+
+    const teacherOne = (await teacherOneResponse.json()) as {
+      teacherClassCode: string;
+    };
+    const teacherTwo = (await teacherTwoResponse.json()) as {
+      teacherClassCode: string;
+    };
+    assert.match(teacherOne.teacherClassCode, /^ROB-/);
+    assert.match(teacherTwo.teacherClassCode, /^ROB-/);
+    assert.notEqual(teacherOne.teacherClassCode, teacherTwo.teacherClassCode);
+
+    const studentOneResponse = await putProgress(
+      isolationTokens.studentOne,
+      studentPayload("Aluno 1", teacherOne.teacherClassCode),
+    );
+    const studentTwoResponse = await putProgress(
+      isolationTokens.studentTwo,
+      studentPayload("Aluno 2", teacherTwo.teacherClassCode),
+    );
+    assert.equal(studentOneResponse.status, 200);
+    assert.equal(studentTwoResponse.status, 200);
+
+    const teacherOneStudentsResponse = await getStudents(isolationTokens.teacherOne);
+    const teacherTwoStudentsResponse = await getStudents(isolationTokens.teacherTwo);
+    assert.equal(teacherOneStudentsResponse.status, 200);
+    assert.equal(teacherTwoStudentsResponse.status, 200);
+
+    const teacherOneStudents = (await teacherOneStudentsResponse.json()) as Array<{
+      userId: string;
+      name: string;
+      teacherClassCode: string;
+    }>;
+    const teacherTwoStudents = (await teacherTwoStudentsResponse.json()) as Array<{
+      userId: string;
+      name: string;
+      teacherClassCode: string;
+    }>;
+    assert.deepEqual(teacherOneStudents.map(({ name }) => name), ["Aluno 1"]);
+    assert.deepEqual(teacherTwoStudents.map(({ name }) => name), ["Aluno 2"]);
+    assert.equal(teacherOneStudents[0]?.userId, isolationUsers.studentOne);
+    assert.equal(teacherTwoStudents[0]?.userId, isolationUsers.studentTwo);
+    assert.equal(teacherOneStudents[0]?.teacherClassCode, teacherOne.teacherClassCode);
+    assert.equal(teacherTwoStudents[0]?.teacherClassCode, teacherTwo.teacherClassCode);
+  });
+
+  it("rejects invalid class codes and non-teacher access to student lists", async () => {
+    await db.insert(progressTable).values({
+      userId: isolationUsers.nonTeacher,
+      name: "Aluno sem acesso de professor",
+      role: "student",
+      teacherClassName: "Turma de teste",
+      teacherClassCode: "ROB-TEST",
+      level: 1,
+      xp: 0,
+      xpNextLevel: 100,
+      coins: 0,
+      gems: 0,
+      streakDays: 0,
+      completedMissions: 0,
+      selectedThemes: [],
+      ownedItems: [],
+    });
+
+    const invalidStudentResponse = await fetch(`${baseUrl}/progress/me`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${isolationTokens.nonTeacher}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: "Aluno com código inválido",
+        role: "student",
+        teacherClassName: "Turma inexistente",
+        teacherClassCode: "ROB-NOT-FOUND",
+        level: 1,
+        xp: 0,
+        xpNextLevel: 100,
+        coins: 0,
+        gems: 0,
+        streakDays: 0,
+        completedMissions: 0,
+        selectedThemes: [],
+        ownedItems: [],
+      }),
+    });
+    assert.equal(invalidStudentResponse.status, 400);
+    assert.deepEqual(await invalidStudentResponse.json(), { error: "Invalid class code" });
+
+    const studentListResponse = await fetch(`${baseUrl}/progress/students`, {
+      headers: { Authorization: `Bearer ${isolationTokens.nonTeacher}` },
+    });
+    assert.equal(studentListResponse.status, 403);
+    assert.deepEqual(await studentListResponse.json(), { error: "Teacher access required" });
+  });
+
+  it("returns no students for a legacy teacher without a class code", async () => {
+    await db.insert(progressTable).values({
+      userId: isolationUsers.legacyTeacher,
+      name: "Professor antigo",
+      role: "teacher",
+      teacherClassName: "Turma antiga",
+      teacherClassCode: "",
+      level: 1,
+      xp: 0,
+      xpNextLevel: 100,
+      coins: 0,
+      gems: 0,
+      streakDays: 0,
+      completedMissions: 0,
+      selectedThemes: [],
+      ownedItems: [],
+    });
+
+    const response = await fetch(`${baseUrl}/progress/students`, {
+      headers: { Authorization: `Bearer ${isolationTokens.legacyTeacher}` },
+    });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), []);
   });
 });
