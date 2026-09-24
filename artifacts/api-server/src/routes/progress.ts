@@ -1,6 +1,6 @@
 import { and, asc, eq } from "drizzle-orm";
 import { randomBytes } from "node:crypto";
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type RequestHandler } from "express";
 import { db, progressTable } from "@workspace/db";
 import {
   GetMyProgressResponse,
@@ -9,8 +9,6 @@ import {
   UpdateMyProgressResponse,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/auth";
-
-const router: IRouter = Router();
 
 function toResponse(row: typeof progressTable.$inferSelect) {
   return GetMyProgressResponse.parse({
@@ -51,7 +49,12 @@ async function createUniqueClassCode(): Promise<string> {
   throw new Error("Unable to create a unique class code");
 }
 
-router.get("/progress/me", requireAuth, async (req, res): Promise<void> => {
+export function createProgressRouter(
+  authMiddleware: RequestHandler = requireAuth,
+): IRouter {
+  const router: IRouter = Router();
+
+  router.get("/progress/me", authMiddleware, async (req, res): Promise<void> => {
   const [row] = await db
     .select()
     .from(progressTable)
@@ -63,9 +66,9 @@ router.get("/progress/me", requireAuth, async (req, res): Promise<void> => {
   }
 
   res.json(toResponse(row));
-});
+  });
 
-router.put("/progress/me", requireAuth, async (req, res): Promise<void> => {
+  router.put("/progress/me", authMiddleware, async (req, res): Promise<void> => {
   const parsed = UpdateMyProgressBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -129,9 +132,9 @@ router.put("/progress/me", requireAuth, async (req, res): Promise<void> => {
     .returning();
 
   res.json(UpdateMyProgressResponse.parse(toResponse(row)));
-});
+  });
 
-router.get("/progress/students", requireAuth, async (req, res): Promise<void> => {
+  router.get("/progress/students", authMiddleware, async (req, res): Promise<void> => {
   const [teacher] = await db
     .select({
       role: progressTable.role,
@@ -157,6 +160,9 @@ router.get("/progress/students", requireAuth, async (req, res): Promise<void> =>
     .orderBy(asc(progressTable.name));
 
   res.json(ListStudentProgressResponse.parse(students.map(toResponse)));
-});
+  });
 
-export default router;
+  return router;
+}
+
+export default createProgressRouter();

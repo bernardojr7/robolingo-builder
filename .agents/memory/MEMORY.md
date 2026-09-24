@@ -1,3 +1,4 @@
 - [Clerk Expo setup](clerk-expo-setup.md) — use a mature SDK-compatible Clerk release and keep publishable-key forwarding in dev/build paths.
 - [Scoped workspace dependencies](scoped-workspace-dependencies.md) — install server-only packages with a workspace filter; the generic package installer targets the root.
 - [Class code isolation](class-code-isolation.md) — class codes are server-owned, and legacy empty codes must never authorize student visibility.
+- [Development schema alignment](development-schema-alignment.md) — database-backed tests require the development schema to match the Drizzle source before diagnosing route failures.

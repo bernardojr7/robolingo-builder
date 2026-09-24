@@ -2,10 +2,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@clerk/expo';
 import {
   getGetMyProgressQueryKey,
-  type ProgressInput,
   useGetMyProgress,
   useUpdateMyProgress,
 } from '@workspace/api-client-react';
+import {
+  buildProgressPayload,
+  mergeRemoteProgress,
+  serializeProgressPayload,
+  type SyncablePlayerState,
+} from '@workspace/api-client-react/progress-sync';
 import React, { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 import type { CurriculumYearId } from '@/data/gameDesign';
 
@@ -45,22 +50,10 @@ export const INTERESTS: Array<{ id: InterestId; label: string; icon: string }> =
   { id: 'viagem', label: 'Viagem', icon: 'airplane-outline' },
 ];
 
-type PlayerState = {
-  name: string;
-  profileOwnerId: string | null;
+export type PlayerState = SyncablePlayerState & {
   profileRole: AccountRole | null;
-  teacherClassName: string;
-  teacherClassCode: string;
-  level: number;
-  xp: number;
-  xpNextLevel: number;
-  coins: number;
-  gems: number;
-  streakDays: number;
-  completedMissions: number;
   selectedThemes: InterestId[];
   curriculumYear: CurriculumYearId;
-  ownedItems: string[];
 };
 
 type SyncStatus = 'offline' | 'syncing' | 'synced' | 'error';
@@ -155,23 +148,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!isSignedIn || !userId || !progressQuery.isFetched) return;
 
     if (progressQuery.data) {
-      setPlayer((current) => ({
-        ...current,
-        profileOwnerId: userId,
-        name: progressQuery.data.name,
-        profileRole: progressQuery.data.role,
-        teacherClassName: progressQuery.data.teacherClassName,
-        teacherClassCode: progressQuery.data.teacherClassCode,
-        level: progressQuery.data.level,
-        xp: progressQuery.data.xp,
-        xpNextLevel: progressQuery.data.xpNextLevel,
-        coins: progressQuery.data.coins,
-        gems: progressQuery.data.gems,
-        streakDays: progressQuery.data.streakDays,
-        completedMissions: progressQuery.data.completedMissions,
-        selectedThemes: progressQuery.data.selectedThemes,
-        ownedItems: progressQuery.data.ownedItems,
-      }));
+      setPlayer((current) => mergeRemoteProgress(current, progressQuery.data, userId));
     }
 
     setRemoteReady(true);
@@ -183,22 +160,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const payload: ProgressInput = {
-      name: player.name,
-      role: player.profileRole,
-      teacherClassName: player.teacherClassName,
-      teacherClassCode: player.teacherClassCode,
-      level: player.level,
-      xp: player.xp,
-      xpNextLevel: player.xpNextLevel,
-      coins: player.coins,
-      gems: player.gems,
-      streakDays: player.streakDays,
-      completedMissions: player.completedMissions,
-      selectedThemes: player.selectedThemes,
-      ownedItems: player.ownedItems,
-    };
-    const serializedPayload = JSON.stringify(payload);
+    const payload = buildProgressPayload(player);
+    const serializedPayload = serializeProgressPayload(payload);
     if (serializedPayload === lastSyncedPayload) return;
 
     setSyncStatus('syncing');
@@ -211,7 +174,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             teacherClassCode: savedProgress.teacherClassCode,
           }));
           setLastSyncedPayload(
-            JSON.stringify({
+            serializeProgressPayload({
               ...payload,
               teacherClassCode: savedProgress.teacherClassCode,
             }),
