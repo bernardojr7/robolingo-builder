@@ -1,4 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '@clerk/expo';
+import {
+  getGetMyProgressQueryKey,
+  type ProgressInput,
+  useGetMyProgress,
+  useUpdateMyProgress,
+} from '@workspace/api-client-react';
 import React, { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 
 export type InterestId =
@@ -53,6 +60,8 @@ type PlayerState = {
   ownedItems: string[];
 };
 
+type SyncStatus = 'offline' | 'syncing' | 'synced' | 'error';
+
 const DEFAULT_STATE: PlayerState = {
   name: 'Alex',
   profileOwnerId: null,
@@ -73,6 +82,7 @@ type AppContextValue = {
   player: PlayerState;
   hydrated: boolean;
   profileReady: boolean;
+  syncStatus: SyncStatus;
   ensureProfileOwner: (userId: string) => void;
   setProfile: (profile: {
     role: AccountRole;
@@ -90,8 +100,26 @@ const STORAGE_KEY = '@robolingo/player';
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  const { isLoaded, isSignedIn, userId } = useAuth();
   const [player, setPlayer] = useState<PlayerState>(DEFAULT_STATE);
   const [hydrated, setHydrated] = useState(false);
+  const [remoteReady, setRemoteReady] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('offline');
+  const [lastSyncedPayload, setLastSyncedPayload] = useState('');
+  const progressQuery = useGetMyProgress({
+    query: {
+      enabled: hydrated && isLoaded && Boolean(isSignedIn && userId),
+      retry: false,
+      staleTime: Infinity,
+      queryKey: [...getGetMyProgressQueryKey(), userId ?? 'signed-out'],
+    },
+  });
+  const { mutate: mutateProgress } = useUpdateMyProgress({
+    mutation: {
+      retry: 3,
+      retryDelay: 5_000,
+    },
+  });
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY)
@@ -110,11 +138,91 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [hydrated, player]);
 
+  useEffect(() => {
+    setRemoteReady(false);
+    setLastSyncedPayload('');
+    setSyncStatus(isSignedIn && userId ? 'syncing' : 'offline');
+  }, [isSignedIn, userId]);
+
+  useEffect(() => {
+    if (!isSignedIn || !userId || !progressQuery.isFetched) return;
+
+    if (progressQuery.data) {
+      setPlayer((current) => ({
+        ...current,
+        profileOwnerId: userId,
+        name: progressQuery.data.name,
+        profileRole: progressQuery.data.role,
+        teacherClassName: progressQuery.data.teacherClassName,
+        level: progressQuery.data.level,
+        xp: progressQuery.data.xp,
+        xpNextLevel: progressQuery.data.xpNextLevel,
+        coins: progressQuery.data.coins,
+        gems: progressQuery.data.gems,
+        streakDays: progressQuery.data.streakDays,
+        completedMissions: progressQuery.data.completedMissions,
+        selectedThemes: progressQuery.data.selectedThemes,
+        ownedItems: progressQuery.data.ownedItems,
+      }));
+    }
+
+    setRemoteReady(true);
+    setSyncStatus(progressQuery.data ? 'synced' : 'offline');
+  }, [isSignedIn, progressQuery.data, progressQuery.isFetched, userId]);
+
+  useEffect(() => {
+    if (!remoteReady || !isSignedIn || !userId || player.profileOwnerId !== userId || !player.profileRole) {
+      return;
+    }
+
+    const payload: ProgressInput = {
+      name: player.name,
+      role: player.profileRole,
+      teacherClassName: player.teacherClassName,
+      level: player.level,
+      xp: player.xp,
+      xpNextLevel: player.xpNextLevel,
+      coins: player.coins,
+      gems: player.gems,
+      streakDays: player.streakDays,
+      completedMissions: player.completedMissions,
+      selectedThemes: player.selectedThemes,
+      ownedItems: player.ownedItems,
+    };
+    const serializedPayload = JSON.stringify(payload);
+    if (serializedPayload === lastSyncedPayload) return;
+
+    setSyncStatus('syncing');
+    mutateProgress(
+      { data: payload },
+      {
+        onSuccess: () => {
+          setLastSyncedPayload(serializedPayload);
+          setSyncStatus('synced');
+        },
+        onError: () => {
+          setSyncStatus('error');
+        },
+      },
+    );
+  }, [
+    isSignedIn,
+    lastSyncedPayload,
+    player,
+    remoteReady,
+    mutateProgress,
+    userId,
+  ]);
+
   const value = useMemo<AppContextValue>(
     () => ({
       player,
       hydrated,
-      profileReady: hydrated && player.profileOwnerId !== null,
+      profileReady:
+        hydrated &&
+        player.profileOwnerId !== null &&
+        (!isSignedIn || remoteReady),
+      syncStatus,
       ensureProfileOwner: (userId) => {
         setPlayer((current) => {
           if (current.profileOwnerId === userId) {
@@ -183,7 +291,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       },
       hasItem: (itemId) => player.ownedItems.includes(itemId),
     }),
-    [hydrated, player],
+    [hydrated, isSignedIn, player, remoteReady, syncStatus],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

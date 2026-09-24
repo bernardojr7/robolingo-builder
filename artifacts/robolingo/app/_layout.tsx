@@ -18,17 +18,24 @@ import * as SplashScreen from 'expo-splash-screen';
 import { AppProvider, useAppState } from '@/context/AppContext';
 import { ClerkLoaded, ClerkProvider, useAuth } from '@clerk/expo';
 import { tokenCache } from '@clerk/expo/token-cache';
+import { setAuthTokenGetter, setBaseUrl } from '@workspace/api-client-react';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+setBaseUrl(`https://${process.env.EXPO_PUBLIC_DOMAIN}`);
 
 const queryClient = new QueryClient();
 
 function RootLayoutNav() {
   const segments = useSegments();
   const router = useRouter();
-  const { isLoaded, isSignedIn, userId } = useAuth();
+  const { getToken, isLoaded, isSignedIn, userId } = useAuth();
   const { player, hydrated, profileReady, ensureProfileOwner } = useAppState();
+
+  useEffect(() => {
+    setAuthTokenGetter(getToken);
+    return () => setAuthTokenGetter(null);
+  }, [getToken]);
 
   useEffect(() => {
     if (isLoaded && isSignedIn && userId && hydrated) {

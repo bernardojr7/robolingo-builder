@@ -3,6 +3,7 @@ import { useClerk } from '@clerk/expo';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { getListStudentProgressQueryKey, useListStudentProgress } from '@workspace/api-client-react';
 import { IconButton, PrimaryButton, RobotAvatar, Screen, SectionTitle, StatPill, TopBar } from '@/components/RobolingoUI';
 import { useAppState } from '@/context/AppContext';
 import { useColors } from '@/hooks/useColors';
@@ -12,6 +13,19 @@ export default function TeacherScreen() {
   const router = useRouter();
   const { signOut } = useClerk();
   const { player } = useAppState();
+  const studentsQuery = useListStudentProgress({
+    query: {
+      enabled: player.profileRole === 'teacher',
+      retry: false,
+      staleTime: 30_000,
+      queryKey: [...getListStudentProgressQueryKey(), player.profileOwnerId ?? 'signed-out'],
+    },
+  });
+  const students = studentsQuery.data ?? [];
+  const participatingStudents = students.filter((student) => student.completedMissions > 0).length;
+  const averageXp = students.length
+    ? Math.round(students.reduce((total, student) => total + student.xp, 0) / students.length)
+    : 0;
 
   const handleSignOut = async () => {
     await signOut();
@@ -43,9 +57,14 @@ export default function TeacherScreen() {
       </View>
 
       <View style={styles.statsRow}>
-        <StatPill icon="people-outline" value="24" label="alunos" />
-        <StatPill icon="checkmark-circle-outline" value="78%" label="participação" tone="accent" />
-        <StatPill icon="trending-up-outline" value="+12%" label="evolução" tone="purple" />
+        <StatPill icon="people-outline" value={students.length} label="alunos" />
+        <StatPill
+          icon="checkmark-circle-outline"
+          value={students.length ? `${Math.round((participatingStudents / students.length) * 100)}%` : '—'}
+          label="participação"
+          tone="accent"
+        />
+        <StatPill icon="trending-up-outline" value={averageXp || '—'} label="XP médio" tone="purple" />
       </View>
 
       <SectionTitle title="Sua turma" action="Editar" onAction={() => undefined} />
@@ -62,6 +81,29 @@ export default function TeacherScreen() {
           </Text>
         </View>
         <Ionicons name="chevron-forward" size={19} color={colors.mutedForeground} />
+      </View>
+
+      <SectionTitle title="Progresso dos alunos" />
+      <View style={[styles.studentList, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        {studentsQuery.isLoading ? (
+          <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>Carregando progresso...</Text>
+        ) : students.length === 0 ? (
+          <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
+            Os alunos aparecerão aqui quando concluírem o onboarding.
+          </Text>
+        ) : (
+          students.map((student) => (
+            <View key={student.userId} style={[styles.studentRow, { borderBottomColor: colors.border }]}>
+              <View style={styles.studentCopy}>
+                <Text style={[styles.studentName, { color: colors.foreground }]}>{student.name}</Text>
+                <Text style={[styles.studentMeta, { color: colors.mutedForeground }]}>
+                  Nível {student.level} · {student.completedMissions} missões
+                </Text>
+              </View>
+              <Text style={[styles.studentXp, { color: colors.primary }]}>{student.xp} XP</Text>
+            </View>
+          ))
+        )}
       </View>
 
       <SectionTitle title="Ações rápidas" />
@@ -127,4 +169,11 @@ const styles = StyleSheet.create({
   actionCard: { flex: 1, minHeight: 119, borderWidth: 1, borderRadius: 19, padding: 14 },
   actionLabel: { fontFamily: 'Inter_700Bold', fontSize: 13, marginTop: 12 },
   actionDescription: { fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 4, lineHeight: 15 },
+  studentList: { borderWidth: 1, borderRadius: 19, paddingHorizontal: 14, marginBottom: 20 },
+  studentRow: { minHeight: 62, borderBottomWidth: 1, flexDirection: 'row', alignItems: 'center' },
+  studentCopy: { flex: 1 },
+  studentName: { fontFamily: 'Inter_700Bold', fontSize: 13 },
+  studentMeta: { fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 4 },
+  studentXp: { fontFamily: 'Inter_700Bold', fontSize: 13 },
+  emptyText: { fontFamily: 'Inter_400Regular', fontSize: 12, lineHeight: 18, paddingVertical: 17 },
 });

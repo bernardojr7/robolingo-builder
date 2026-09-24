@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: progress
+    description: Student progress operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,61 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /progress/me:
+    get:
+      operationId: getMyProgress
+      tags: [progress]
+      summary: Get the signed-in user's progress
+      responses:
+        "200":
+          description: Current progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Progress"
+        "401":
+          description: Authentication required
+        "404":
+          description: Progress has not been created yet
+    put:
+      operationId: updateMyProgress
+      tags: [progress]
+      summary: Save the signed-in user's progress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProgressInput"
+      responses:
+        "200":
+          description: Saved progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Progress"
+        "400":
+          description: Invalid progress
+        "401":
+          description: Authentication required
+  /progress/students:
+    get:
+      operationId: listStudentProgress
+      tags: [progress]
+      summary: List student progress for the signed-in teacher
+      responses:
+        "200":
+          description: Student progress
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Progress"
+        "401":
+          description: Authentication required
+        "403":
+          description: Teacher access required
 components:
   schemas:
     HealthStatus:
@@ -33,4 +90,124 @@ components:
           type: string
       required:
         - status
+    AccountRole:
+      type: string
+      enum: [student, teacher]
+    InterestId:
+      type: string
+      enum:
+        - games
+        - futebol
+        - moda
+        - musica
+        - anime
+        - culinaria
+        - leitura
+        - matematica
+        - ciencia
+        - historia
+        - geografia
+        - hq
+        - filme
+        - serie
+        - viagem
+    Progress:
+      type: object
+      properties:
+        userId:
+          type: string
+        name:
+          type: string
+        role:
+          $ref: "#/components/schemas/AccountRole"
+        teacherClassName:
+          type: string
+        level:
+          type: integer
+        xp:
+          type: integer
+        xpNextLevel:
+          type: integer
+        coins:
+          type: integer
+        gems:
+          type: integer
+        streakDays:
+          type: integer
+        completedMissions:
+          type: integer
+        selectedThemes:
+          type: array
+          items:
+            $ref: "#/components/schemas/InterestId"
+        ownedItems:
+          type: array
+          items:
+            type: string
+      required:
+        - userId
+        - name
+        - role
+        - teacherClassName
+        - level
+        - xp
+        - xpNextLevel
+        - coins
+        - gems
+        - streakDays
+        - completedMissions
+        - selectedThemes
+        - ownedItems
+    ProgressInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        role:
+          $ref: "#/components/schemas/AccountRole"
+        teacherClassName:
+          type: string
+        level:
+          type: integer
+          minimum: 1
+        xp:
+          type: integer
+          minimum: 0
+        xpNextLevel:
+          type: integer
+          minimum: 1
+        coins:
+          type: integer
+          minimum: 0
+        gems:
+          type: integer
+          minimum: 0
+        streakDays:
+          type: integer
+          minimum: 0
+        completedMissions:
+          type: integer
+          minimum: 0
+        selectedThemes:
+          type: array
+          items:
+            $ref: "#/components/schemas/InterestId"
+        ownedItems:
+          type: array
+          items:
+            type: string
+      required:
+        - name
+        - role
+        - teacherClassName
+        - level
+        - xp
+        - xpNextLevel
+        - coins
+        - gems
+        - streakDays
+        - completedMissions
+        - selectedThemes
+        - ownedItems
 
