@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useClerk } from '@clerk/expo';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { getListStudentProgressQueryKey, useListStudentProgress } from '@workspace/api-client-react';
 import { IconButton, PrimaryButton, RobotAvatar, Screen, SectionTitle, StatPill, TopBar } from '@/components/RobolingoUI';
 import { useAppState } from '@/context/AppContext';
@@ -59,6 +59,7 @@ export default function TeacherScreen() {
     },
   });
   const students = studentsQuery.data ?? [];
+  const classCode = player.teacherClassCode.trim();
   const participatingStudents = students.filter((student) => student.completedMissions > 0).length;
   const averageXp = students.length
     ? Math.round(students.reduce((total, student) => total + student.xp, 0) / students.length)
@@ -67,6 +68,28 @@ export default function TeacherScreen() {
   const handleSignOut = async () => {
     await signOut();
     router.replace('/(auth)/welcome');
+  };
+
+  const handleShareClassCode = async () => {
+    if (!classCode) {
+      Alert.alert(
+        'Código ainda não disponível',
+        'Aguarde alguns segundos enquanto geramos o código da sua turma.',
+      );
+      return;
+    }
+
+    try {
+      await Share.share({
+        message: `Entre na minha turma do Robolingo usando o código ${classCode}.`,
+        title: 'Código da turma do Robolingo',
+      });
+    } catch {
+      Alert.alert(
+        'Não foi possível compartilhar',
+        'Tente novamente em alguns instantes.',
+      );
+    }
   };
 
   return (
@@ -214,7 +237,12 @@ export default function TeacherScreen() {
         ))}
       </View>
 
-      <PrimaryButton label="Compartilhar código da turma" icon="share-social-outline" onPress={() => undefined} />
+      <PrimaryButton
+        label="Compartilhar código da turma"
+        icon="share-social-outline"
+        onPress={handleShareClassCode}
+        disabled={!classCode}
+      />
     </Screen>
   );
 }
