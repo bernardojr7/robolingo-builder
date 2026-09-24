@@ -1,7 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
+import {
+  RecordingPresets,
+  requestRecordingPermissionsAsync,
+  setAudioModeAsync,
+  useAudioPlayer,
+  useAudioRecorder,
+  useAudioRecorderState,
+} from 'expo-audio';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import * as Speech from 'expo-speech';
+import React, { useEffect, useState } from 'react';
+import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { PrimaryButton, ProgressBar, RobotAvatar, Screen, TopBar } from '@/components/RobolingoUI';
 import { useAppState } from '@/context/AppContext';
 import { ENGLISH_LEVELS } from '@/data/gameDesign';
@@ -20,8 +29,88 @@ export default function MissionScreen() {
   const [selected, setSelected] = useState<number | null>(null);
   const [correct, setCorrect] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [recordingUri, setRecordingUri] = useState<string | null>(null);
+  const [speakingConfidence, setSpeakingConfidence] = useState<'confident' | 'practice' | null>(null);
+  const [recordingPermission, setRecordingPermission] = useState<{ granted: boolean; canAskAgain: boolean } | null>(null);
+  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const recorderState = useAudioRecorderState(recorder);
+  const recordingPlayer = useAudioPlayer(recordingUri ?? undefined);
+  const isListeningChallenge = mission.mode === 'listening';
+  const isSpeakingChallenge = mission.mode === 'speaking';
+
+  useEffect(() => {
+    return () => {
+      Speech.stop();
+    };
+  }, []);
+
+  function playListeningAudio() {
+    if (!mission.audioText) return;
+    Speech.stop();
+    setIsPlaying(true);
+    Speech.speak(mission.audioText, {
+      language: 'en-US',
+      rate: 0.78,
+      onDone: () => setIsPlaying(false),
+      onStopped: () => setIsPlaying(false),
+      onError: () => setIsPlaying(false),
+    });
+  }
+
+  async function toggleRecording() {
+    if (recorderState.isRecording) {
+      try {
+        await recorder.stop();
+        const uri = recorder.uri;
+        setRecordingUri(uri);
+        setSpeakingConfidence(null);
+        setFeedback(uri ? 'Gravação pronta. Ouça e avalie como foi.' : 'Não encontramos uma gravação. Tente novamente.');
+        await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
+      } catch {
+        setFeedback('Não foi possível terminar a gravação. Tente novamente.');
+      }
+      return;
+    }
+
+    const permission = await requestRecordingPermissionsAsync();
+    setRecordingPermission(permission);
+    if (!permission.granted) {
+      setFeedback(
+        permission.canAskAgain
+          ? 'Precisamos do microfone para gravar sua resposta.'
+          : 'O microfone está bloqueado. Abra as configurações para permitir a gravação.',
+      );
+      return;
+    }
+
+    try {
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      await recorder.prepareToRecordAsync();
+      recorder.record();
+      setRecordingUri(null);
+      setSpeakingConfidence(null);
+      setFeedback(null);
+    } catch {
+      setFeedback('Não foi possível iniciar o microfone. Tente novamente.');
+    }
+  }
+
+  function openMicrophoneSettings() {
+    if (Platform.OS !== 'web') {
+      void Linking.openSettings();
+    }
+  }
 
   function submitAnswer() {
+    if (isSpeakingChallenge) {
+      if (!recordingUri || !speakingConfidence) return;
+      const answerIsCorrect = speakingConfidence === 'confident';
+      setCorrect(answerIsCorrect);
+      completeMission(answerIsCorrect);
+      setStep(2);
+      return;
+    }
     if (selected === null) return;
     const answerIsCorrect = selected === mission.correctIndex;
     setCorrect(answerIsCorrect);
@@ -91,46 +180,185 @@ export default function MissionScreen() {
 
       {step === 1 ? (
         <View>
-          <View style={[styles.questionCard, { backgroundColor: colors.heroStart }]}>
-            <Text style={styles.questionEyebrow}>ESCOLHA A RESPOSTA</Text>
-            <Text style={styles.questionText}>{mission.question}</Text>
-            <Text style={styles.questionHint}>{mission.hint}</Text>
-          </View>
-          <View style={styles.optionsList}>
-            {mission.options.map((option, index) => {
-              const isSelected = selected === index;
-              return (
+          {isListeningChallenge ? (
+            <>
+              <View style={[styles.questionCard, { backgroundColor: colors.heroStart }]}>
+                <Text style={styles.questionEyebrow}>OUÇA E ENTENDA</Text>
+                <Text style={styles.questionText}>{mission.question}</Text>
+                <Text style={styles.questionHint}>{mission.hint}</Text>
+              </View>
+              <Pressable
+                testID="play-listening-audio"
+                onPress={playListeningAudio}
+                accessibilityRole="button"
+                accessibilityLabel={isPlaying ? 'Reproduzindo áudio' : 'Ouvir frase em inglês'}
+                style={({ pressed }) => [
+                  styles.audioPlayer,
+                  { backgroundColor: colors.secondary, borderColor: colors.border, opacity: pressed ? 0.76 : 1 },
+                ]}
+              >
+                <View style={[styles.audioIcon, { backgroundColor: colors.primary }]}>
+                  <Ionicons name={isPlaying ? 'volume-high' : 'play'} size={21} color={colors.primaryForeground} />
+                </View>
+                <View style={styles.audioCopy}>
+                  <Text style={[styles.audioTitle, { color: colors.foreground }]}>
+                    {isPlaying ? 'Reproduzindo...' : 'Ouvir a frase'}
+                  </Text>
+                  <Text style={[styles.audioSubtitle, { color: colors.mutedForeground }]}>
+                    Toque quantas vezes precisar
+                  </Text>
+                </View>
+                <Ionicons name="headset-outline" size={21} color={colors.primary} />
+              </Pressable>
+              <View style={styles.optionsList}>
+                {mission.options.map((option, index) => {
+                  const isSelected = selected === index;
+                  return (
+                    <Pressable
+                      key={option}
+                      onPress={() => setSelected(index)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isSelected }}
+                      style={({ pressed }) => [
+                        styles.optionRow,
+                        {
+                          backgroundColor: isSelected ? colors.secondary : colors.card,
+                          borderColor: isSelected ? colors.primary : colors.border,
+                          opacity: pressed ? 0.75 : 1,
+                        },
+                      ]}
+                    >
+                      <View style={[styles.optionLetter, { backgroundColor: isSelected ? colors.primary : colors.muted }]}>
+                        <Text style={[styles.optionLetterText, { color: isSelected ? colors.primaryForeground : colors.mutedForeground }]}>
+                          {String.fromCharCode(65 + index)}
+                        </Text>
+                      </View>
+                      <Text style={[styles.optionText, { color: colors.foreground }]}>{option}</Text>
+                      {isSelected ? <Ionicons name="checkmark-circle" size={22} color={colors.primary} /> : null}
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <PrimaryButton label="Confirmar compreensão" onPress={submitAnswer} disabled={selected === null} icon="checkmark" />
+            </>
+          ) : isSpeakingChallenge ? (
+            <>
+              <View style={[styles.questionCard, { backgroundColor: colors.heroStart }]}>
+                <Text style={styles.questionEyebrow}>FALE EM INGLÊS</Text>
+                <Text style={styles.questionText}>{mission.speakingPrompt}</Text>
+                <Text style={styles.questionHint}>Grave sua voz e compare com a frase.</Text>
+              </View>
+              <View style={[styles.speakingCard, { backgroundColor: colors.secondary, borderColor: colors.border }]}>
+                <View style={styles.speakingHeading}>
+                  <Ionicons name="mic-outline" size={22} color={colors.primary} />
+                  <Text style={[styles.speakingTitle, { color: colors.foreground }]}>Sua resposta falada</Text>
+                </View>
+                <Text style={[styles.speakingHint, { color: colors.mutedForeground }]}>
+                  Fale devagar. Você pode regravar quantas vezes quiser.
+                </Text>
                 <Pressable
-                  key={option}
-                  onPress={() => setSelected(index)}
+                  testID="record-speaking-answer"
+                  onPress={toggleRecording}
                   accessibilityRole="button"
-                  accessibilityState={{ selected: isSelected }}
+                  accessibilityLabel={recorderState.isRecording ? 'Parar gravação' : 'Gravar resposta falada'}
                   style={({ pressed }) => [
-                    styles.optionRow,
-                    {
-                      backgroundColor: isSelected ? colors.secondary : colors.card,
-                      borderColor: isSelected ? colors.primary : colors.border,
-                      opacity: pressed ? 0.75 : 1,
-                    },
+                    styles.recordButton,
+                    { backgroundColor: recorderState.isRecording ? colors.destructive : colors.primary, opacity: pressed ? 0.78 : 1 },
                   ]}
                 >
-                  <View
-                    style={[
-                      styles.optionLetter,
-                      { backgroundColor: isSelected ? colors.primary : colors.muted },
-                    ]}
-                  >
-                    <Text style={[styles.optionLetterText, { color: isSelected ? colors.primaryForeground : colors.mutedForeground }]}>
-                      {String.fromCharCode(65 + index)}
-                    </Text>
-                  </View>
-                  <Text style={[styles.optionText, { color: colors.foreground }]}>{option}</Text>
-                  {isSelected ? <Ionicons name="checkmark-circle" size={22} color={colors.primary} /> : null}
+                  <Ionicons name={recorderState.isRecording ? 'stop' : 'mic'} size={24} color={colors.primaryForeground} />
+                  <Text style={[styles.recordButtonText, { color: colors.primaryForeground }]}>
+                    {recorderState.isRecording
+                      ? `Parar gravação · ${Math.round(recorderState.durationMillis / 1000)}s`
+                      : recordingUri
+                        ? 'Gravar novamente'
+                        : 'Começar gravação'}
+                  </Text>
                 </Pressable>
-              );
-            })}
-          </View>
-          <PrimaryButton label="Confirmar resposta" onPress={submitAnswer} disabled={selected === null} icon="checkmark" />
+                {recordingUri ? (
+                  <Pressable
+                    onPress={() => recordingPlayer.play()}
+                    accessibilityRole="button"
+                    accessibilityLabel="Ouvir minha gravação"
+                    style={[styles.replayButton, { borderColor: colors.border }]}
+                  >
+                    <Ionicons name="play-circle-outline" size={20} color={colors.primary} />
+                    <Text style={[styles.replayText, { color: colors.foreground }]}>Ouvir minha gravação</Text>
+                  </Pressable>
+                ) : null}
+                {recordingPermission && !recordingPermission.granted && !recordingPermission.canAskAgain ? (
+                  <Pressable onPress={openMicrophoneSettings} style={styles.settingsLink} accessibilityRole="button">
+                    <Text style={[styles.settingsLinkText, { color: colors.primary }]}>Abrir configurações do microfone</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+              {feedback ? <Text style={[styles.recordingFeedback, { color: colors.mutedForeground }]}>{feedback}</Text> : null}
+              {recordingUri ? (
+                <View style={styles.speakingEvaluation}>
+                  <Text style={[styles.evaluationTitle, { color: colors.foreground }]}>Como foi sua fala?</Text>
+                  <View style={styles.evaluationOptions}>
+                    <Pressable
+                      onPress={() => setSpeakingConfidence('confident')}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: speakingConfidence === 'confident' }}
+                      style={[styles.evaluationOption, { backgroundColor: speakingConfidence === 'confident' ? colors.secondary : colors.card, borderColor: speakingConfidence === 'confident' ? colors.primary : colors.border }]}
+                    >
+                      <Ionicons name="checkmark-circle-outline" size={21} color={colors.success} />
+                      <Text style={[styles.evaluationText, { color: colors.foreground }]}>Consegui falar</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => setSpeakingConfidence('practice')}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: speakingConfidence === 'practice' }}
+                      style={[styles.evaluationOption, { backgroundColor: speakingConfidence === 'practice' ? colors.secondary : colors.card, borderColor: speakingConfidence === 'practice' ? colors.primary : colors.border }]}
+                    >
+                      <Ionicons name="refresh-outline" size={21} color={colors.accent} />
+                      <Text style={[styles.evaluationText, { color: colors.foreground }]}>Vou praticar mais</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ) : null}
+              <PrimaryButton label="Concluir desafio" onPress={submitAnswer} disabled={!recordingUri || !speakingConfidence} icon="checkmark" />
+            </>
+          ) : (
+            <>
+              <View style={[styles.questionCard, { backgroundColor: colors.heroStart }]}>
+                <Text style={styles.questionEyebrow}>ESCOLHA A RESPOSTA</Text>
+                <Text style={styles.questionText}>{mission.question}</Text>
+                <Text style={styles.questionHint}>{mission.hint}</Text>
+              </View>
+              <View style={styles.optionsList}>
+                {mission.options.map((option, index) => {
+                  const isSelected = selected === index;
+                  return (
+                    <Pressable
+                      key={option}
+                      onPress={() => setSelected(index)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isSelected }}
+                      style={({ pressed }) => [
+                        styles.optionRow,
+                        {
+                          backgroundColor: isSelected ? colors.secondary : colors.card,
+                          borderColor: isSelected ? colors.primary : colors.border,
+                          opacity: pressed ? 0.75 : 1,
+                        },
+                      ]}
+                    >
+                      <View style={[styles.optionLetter, { backgroundColor: isSelected ? colors.primary : colors.muted }]}>
+                        <Text style={[styles.optionLetterText, { color: isSelected ? colors.primaryForeground : colors.mutedForeground }]}>
+                          {String.fromCharCode(65 + index)}
+                        </Text>
+                      </View>
+                      <Text style={[styles.optionText, { color: colors.foreground }]}>{option}</Text>
+                      {isSelected ? <Ionicons name="checkmark-circle" size={22} color={colors.primary} /> : null}
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <PrimaryButton label="Confirmar resposta" onPress={submitAnswer} disabled={selected === null} icon="checkmark" />
+            </>
+          )}
         </View>
       ) : null}
 
@@ -315,6 +543,51 @@ const styles = StyleSheet.create({
     gap: 10,
     marginVertical: 22,
   },
+  audioPlayer: {
+    minHeight: 72,
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+    marginTop: 17,
+  },
+  audioIcon: {
+    width: 43,
+    height: 43,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  audioCopy: { flex: 1 },
+  audioTitle: { fontFamily: 'Inter_700Bold', fontSize: 13 },
+  audioSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 10, marginTop: 3 },
+  speakingCard: { borderWidth: 1, borderRadius: 20, padding: 16, marginTop: 17 },
+  speakingHeading: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  speakingTitle: { fontFamily: 'Inter_700Bold', fontSize: 14 },
+  speakingHint: { fontFamily: 'Inter_400Regular', fontSize: 11, lineHeight: 16, marginTop: 8 },
+  recordButton: {
+    minHeight: 52,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 9,
+    marginTop: 16,
+  },
+  recordButtonText: { fontFamily: 'Inter_700Bold', fontSize: 13 },
+  replayButton: { minHeight: 43, borderTopWidth: 1, marginTop: 13, paddingTop: 13, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  replayText: { fontFamily: 'Inter_600SemiBold', fontSize: 12 },
+  settingsLink: { alignSelf: 'center', marginTop: 12 },
+  settingsLinkText: { fontFamily: 'Inter_600SemiBold', fontSize: 11 },
+  recordingFeedback: { fontFamily: 'Inter_400Regular', fontSize: 11, lineHeight: 16, textAlign: 'center', marginTop: 10 },
+  speakingEvaluation: { marginTop: 20 },
+  evaluationTitle: { fontFamily: 'Inter_700Bold', fontSize: 13, textAlign: 'center', marginBottom: 10 },
+  evaluationOptions: { flexDirection: 'row', gap: 8 },
+  evaluationOption: { flex: 1, minHeight: 61, borderWidth: 1, borderRadius: 15, padding: 9, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  evaluationText: { fontFamily: 'Inter_600SemiBold', fontSize: 10, textAlign: 'center' },
   optionRow: {
     minHeight: 61,
     borderWidth: 1,

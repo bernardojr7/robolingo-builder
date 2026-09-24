@@ -6,7 +6,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { RobotAvatar, Screen, SectionTitle, StatPill, SyncStatusIndicator, TopBar } from '@/components/RobolingoUI';
 import { INTERESTS, useAppState } from '@/context/AppContext';
 import { CURRICULUM_TRACKS, SKILLS } from '@/data/gameDesign';
-import { getSkillProgress } from '@/data/missions';
+import { getPracticalChallengeProgress, getSkillProgress } from '@/data/missions';
 import { useColors } from '@/hooks/useColors';
 
 export default function ProfileScreen() {
@@ -61,6 +61,12 @@ export default function ProfileScreen() {
             <View style={[styles.skillTrack, { backgroundColor: colors.muted }]}>
               <View style={[styles.skillFill, { backgroundColor: colors.primary, width: `${skillProgress[skill.id]}%` }]} />
             </View>
+            {skill.id === 'listening' || skill.id === 'speaking' ? (
+              <Text style={[styles.skillPractice, { color: colors.mutedForeground }]}>
+                {getPracticalChallengeProgress(player.completedMissions, skill.id).completed}/
+                {getPracticalChallengeProgress(player.completedMissions, skill.id).total} práticas
+              </Text>
+            ) : null}
           </View>
         ))}
       </View>
@@ -174,6 +180,7 @@ const styles = StyleSheet.create({
   skillPercent: { fontFamily: 'Inter_700Bold', fontSize: 17, marginTop: 9, marginBottom: 7 },
   skillTrack: { height: 5, borderRadius: 3, overflow: 'hidden' },
   skillFill: { height: '100%', borderRadius: 3 },
+  skillPractice: { fontFamily: 'Inter_500Medium', fontSize: 9, marginTop: 7 },
   trackCard: { minHeight: 62, borderRadius: 18, borderWidth: 1, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 18, marginBottom: 2 },
   trackCopy: { flex: 1 },
   trackTitle: { fontFamily: 'Inter_700Bold', fontSize: 12 },

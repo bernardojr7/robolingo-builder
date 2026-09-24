@@ -2,3 +2,4 @@
 - [Scoped workspace dependencies](scoped-workspace-dependencies.md) — install server-only packages with a workspace filter; the generic package installer targets the root.
 - [Class code isolation](class-code-isolation.md) — class codes are server-owned, and legacy empty codes must never authorize student visibility.
 - [Development schema alignment](development-schema-alignment.md) — database-backed tests require the development schema to match the Drizzle source before diagnosing route failures.
+- [Expo audio challenges](expo-audio-challenges.md) — expo-audio needs expo-asset and a config plugin; expo-speech avoids remote audio dependencies.

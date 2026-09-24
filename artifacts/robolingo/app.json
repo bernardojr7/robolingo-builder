@@ -21,7 +21,13 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Permita que o Robolingo acesse seu microfone para praticar Speaking."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

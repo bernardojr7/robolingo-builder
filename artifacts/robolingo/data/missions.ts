@@ -1,6 +1,8 @@
 import type { InterestId } from '@/context/AppContext';
 import type { CurriculumYearId, EnglishLevelId, RegionId, SkillId } from '@/data/gameDesign';
 
+export type MissionMode = 'quiz' | 'listening' | 'speaking';
+
 export type DailyMission = {
   id: string;
   interest: InterestId;
@@ -12,6 +14,7 @@ export type DailyMission = {
   skills: SkillId[];
   region: RegionId;
   difficulty: EnglishLevelId;
+  mode: MissionMode;
   title: string;
   description: string;
   intro: string;
@@ -21,6 +24,8 @@ export type DailyMission = {
   options: string[];
   correctIndex: number;
   explanation: string;
+  audioText?: string;
+  speakingPrompt?: string;
 };
 
 const MISSIONS: Record<InterestId, DailyMission> = {
@@ -35,6 +40,7 @@ const MISSIONS: Record<InterestId, DailyMission> = {
     skills: ['grammar', 'vocabulary', 'speaking'],
     region: 'village',
     difficulty: 'explorer',
+    mode: 'speaking',
     title: 'Uma partida em inglês',
     description: 'Aprenda uma frase útil para jogar em equipe.',
     intro: 'Hoje vamos praticar uma frase que aparece muito durante uma partida. Escolha a opção que um jogador usaria para pedir ajuda.',
@@ -44,6 +50,7 @@ const MISSIONS: Record<InterestId, DailyMission> = {
     options: ['Help', 'Helps', 'Helping'],
     correctIndex: 0,
     explanation: 'Muito bem. Usamos “Help me!” para pedir ajuda de forma direta.',
+    speakingPrompt: 'Diga: “Help me! The enemy is coming.”',
   },
   futebol: {
     id: 'g6-routine',
@@ -56,6 +63,7 @@ const MISSIONS: Record<InterestId, DailyMission> = {
     skills: ['grammar', 'vocabulary', 'speaking'],
     region: 'village',
     difficulty: 'explorer',
+    mode: 'speaking',
     title: 'Jogue como um local',
     description: 'Aprenda a chamar um passe durante o jogo.',
     intro: 'A bola está chegando e você quer pedir um passe. Escolha a frase mais natural para o momento.',
@@ -65,6 +73,7 @@ const MISSIONS: Record<InterestId, DailyMission> = {
     options: ['Pass', 'Passes', 'Passing'],
     correctIndex: 0,
     explanation: '“Pass me the ball” é a forma natural de pedir um passe.',
+    speakingPrompt: 'Diga: “Pass me the ball, please!”',
   },
   moda: {
     id: 'g6-describe',
@@ -77,6 +86,7 @@ const MISSIONS: Record<InterestId, DailyMission> = {
     skills: ['vocabulary', 'grammar'],
     region: 'village',
     difficulty: 'explorer',
+    mode: 'quiz',
     title: 'Escolha o look',
     description: 'Descreva uma peça de roupa em inglês.',
     intro: 'Você está montando um look e quer falar sobre a sua camiseta favorita.',
@@ -98,15 +108,17 @@ const MISSIONS: Record<InterestId, DailyMission> = {
     skills: ['grammar', 'vocabulary', 'listening'],
     region: 'forest',
     difficulty: 'adventurer',
+    mode: 'listening',
     title: 'Monte sua playlist',
     description: 'Fale sobre o que você gosta de ouvir.',
     intro: 'Você está mostrando uma música para alguém. Complete a frase sobre o seu gosto musical.',
     tip: 'Depois de “I like”, usamos o verbo com “-ing” para falar de uma atividade.',
-    question: 'I like ___ to music.',
-    hint: 'Complete com “ouvir”.',
-    options: ['listen', 'listening', 'listens'],
-    correctIndex: 1,
-    explanation: '“I like listening to music” significa “eu gosto de ouvir música”.',
+    question: 'O que a pessoa gosta de fazer?',
+    hint: 'Ouça a frase e escolha a ideia principal.',
+    options: ['Ouvir música', 'Jogar futebol', 'Ler livros'],
+    correctIndex: 0,
+    explanation: 'A frase diz: “I like listening to music” — eu gosto de ouvir música.',
+    audioText: 'I like listening to music.',
   },
   anime: {
     id: 'g7-stories',
@@ -119,6 +131,7 @@ const MISSIONS: Record<InterestId, DailyMission> = {
     skills: ['reading', 'vocabulary', 'speaking'],
     region: 'forest',
     difficulty: 'adventurer',
+    mode: 'speaking',
     title: 'Uma fala de personagem',
     description: 'Pratique uma frase de ação e coragem.',
     intro: 'Seu personagem está pronto para a próxima aventura. Complete a fala antes da batalha.',
@@ -128,6 +141,7 @@ const MISSIONS: Record<InterestId, DailyMission> = {
     options: ['ready', 'read', 'reads'],
     correctIndex: 0,
     explanation: '“I am ready” é a forma correta de dizer “eu estou pronto”.',
+    speakingPrompt: 'Diga: “I am ready for the next adventure.”',
   },
   culinaria: {
     id: 'g7-clues',
@@ -140,6 +154,7 @@ const MISSIONS: Record<InterestId, DailyMission> = {
     skills: ['reading', 'grammar'],
     region: 'forest',
     difficulty: 'adventurer',
+    mode: 'quiz',
     title: 'Receita em inglês',
     description: 'Aprenda a pedir um ingrediente.',
     intro: 'Você está preparando uma receita e percebeu que falta um ingrediente importante.',
@@ -161,6 +176,7 @@ const MISSIONS: Record<InterestId, DailyMission> = {
     skills: ['reading', 'vocabulary'],
     region: 'beach',
     difficulty: 'hero',
+    mode: 'quiz',
     title: 'Entre as páginas',
     description: 'Entenda uma frase curta de uma história.',
     intro: 'Você encontrou uma frase em um livro e precisa entender o que o personagem está fazendo.',
@@ -182,15 +198,17 @@ const MISSIONS: Record<InterestId, DailyMission> = {
     skills: ['listening', 'grammar'],
     region: 'beach',
     difficulty: 'hero',
+    mode: 'listening',
     title: 'English com números',
     description: 'Pratique como dizer uma operação simples.',
     intro: 'Você está resolvendo uma conta e precisa dizer o resultado em inglês.',
     tip: '“Equals” significa “é igual a”.',
-    question: 'Two plus three ___ five.',
-    hint: 'Complete com “é igual a”.',
-    options: ['equal', 'equals', 'equalling'],
-    correctIndex: 1,
-    explanation: '“Two plus three equals five” é a frase correta.',
+    question: 'Qual é o resultado da conta?',
+    hint: 'Ouça a frase e escolha o número.',
+    options: ['5', '4', '6'],
+    correctIndex: 0,
+    explanation: 'A frase diz: “Two plus three equals five”.',
+    audioText: 'Two plus three equals five.',
   },
   ciencia: {
     id: 'g8-real',
@@ -203,6 +221,7 @@ const MISSIONS: Record<InterestId, DailyMission> = {
     skills: ['grammar', 'speaking', 'listening'],
     region: 'city',
     difficulty: 'hero',
+    mode: 'speaking',
     title: 'Descoberta no laboratório',
     description: 'Aprenda a descrever uma experiência.',
     intro: 'Você está observando um experimento e quer contar o que está acontecendo agora.',
@@ -212,6 +231,7 @@ const MISSIONS: Record<InterestId, DailyMission> = {
     options: ['boil', 'boils', 'boiling'],
     correctIndex: 2,
     explanation: '“Is boiling” descreve algo que está acontecendo neste momento.',
+    speakingPrompt: 'Diga: “The water is boiling now.”',
   },
   historia: {
     id: 'g8-past',
@@ -224,6 +244,7 @@ const MISSIONS: Record<InterestId, DailyMission> = {
     skills: ['grammar', 'reading'],
     region: 'city',
     difficulty: 'hero',
+    mode: 'quiz',
     title: 'Uma viagem no tempo',
     description: 'Fale sobre algo que aconteceu no passado.',
     intro: 'Você está contando uma curiosidade histórica para a sua turma.',
@@ -245,6 +266,7 @@ const MISSIONS: Record<InterestId, DailyMission> = {
     skills: ['reading', 'vocabulary', 'speaking'],
     region: 'airport',
     difficulty: 'legend',
+    mode: 'speaking',
     title: 'Explore o mapa',
     description: 'Aprenda a localizar um lugar.',
     intro: 'Você está olhando um mapa e quer dizer onde o Brasil está localizado.',
@@ -254,6 +276,7 @@ const MISSIONS: Record<InterestId, DailyMission> = {
     options: ['on', 'at', 'in'],
     correctIndex: 2,
     explanation: 'Usamos “in” com regiões e continentes: “in South America”.',
+    speakingPrompt: 'Diga: “Brazil is in South America.”',
   },
   hq: {
     id: 'g9-dialogue',
@@ -266,15 +289,17 @@ const MISSIONS: Record<InterestId, DailyMission> = {
     skills: ['reading', 'listening', 'speaking'],
     region: 'airport',
     difficulty: 'legend',
+    mode: 'listening',
     title: 'Balão de fala',
     description: 'Complete o diálogo de uma história.',
     intro: 'O herói encontrou uma pista. Escolha a pergunta que faz sentido no balão de fala.',
     tip: '“What” significa “o que” ou “qual”.',
-    question: '___ is the secret door?',
-    hint: 'Escolha a palavra usada para perguntar “onde”.',
-    options: ['When', 'Where', 'Who'],
-    correctIndex: 1,
-    explanation: '“Where is the secret door?” significa “onde está a porta secreta?”.',
+    question: 'Sobre o que a pessoa está perguntando?',
+    hint: 'Ouça a pergunta e escolha a ideia principal.',
+    options: ['O lugar da porta', 'A hora da porta', 'A pessoa na porta'],
+    correctIndex: 0,
+    explanation: 'A pergunta “Where is the secret door?” quer saber o lugar da porta.',
+    audioText: 'Where is the secret door?',
   },
   filme: {
     id: 'g9-media',
@@ -287,6 +312,7 @@ const MISSIONS: Record<InterestId, DailyMission> = {
     skills: ['listening', 'speaking', 'vocabulary'],
     region: 'castle',
     difficulty: 'legend',
+    mode: 'speaking',
     title: 'Cena favorita',
     description: 'Fale sobre um filme que você gosta.',
     intro: 'Você está recomendando um filme para um amigo e quer dizer que gostou muito dele.',
@@ -296,6 +322,7 @@ const MISSIONS: Record<InterestId, DailyMission> = {
     options: ['watch', 'watched', 'watching'],
     correctIndex: 1,
     explanation: '“Last night” indica passado, então usamos “watched”.',
+    speakingPrompt: 'Diga: “I watched this movie last night.”',
   },
   serie: {
     id: 'g9-future',
@@ -308,15 +335,17 @@ const MISSIONS: Record<InterestId, DailyMission> = {
     skills: ['grammar', 'listening'],
     region: 'castle',
     difficulty: 'legend',
+    mode: 'listening',
     title: 'Próximo episódio',
     description: 'Converse sobre uma série que está acompanhando.',
     intro: 'Seu amigo quer saber se você continua assistindo à sua série favorita.',
     tip: 'Com “she”, usamos “is” no presente contínuo.',
-    question: 'She ___ watching the new episode.',
-    hint: 'Complete com “está”.',
-    options: ['am', 'is', 'are'],
-    correctIndex: 1,
-    explanation: 'Com “she”, a forma correta é “She is watching”.',
+    question: 'O que ela está fazendo?',
+    hint: 'Ouça a frase e escolha a ação.',
+    options: ['Assistindo ao episódio', 'Cozinhando', 'Viajando'],
+    correctIndex: 0,
+    explanation: 'A frase diz: “She is watching the new episode”.',
+    audioText: 'She is watching the new episode.',
   },
   viagem: {
     id: 'g9-world',
@@ -329,6 +358,7 @@ const MISSIONS: Record<InterestId, DailyMission> = {
     skills: ['speaking', 'vocabulary', 'listening'],
     region: 'future',
     difficulty: 'legend',
+    mode: 'speaking',
     title: 'No aeroporto',
     description: 'Aprenda uma frase essencial para viajar.',
     intro: 'Você chegou ao aeroporto e quer perguntar onde fica o portão de embarque.',
@@ -338,6 +368,7 @@ const MISSIONS: Record<InterestId, DailyMission> = {
     options: ['Where', 'What', 'Why'],
     correctIndex: 0,
     explanation: '“Where is gate twelve?” é a pergunta correta para localizar o portão.',
+    speakingPrompt: 'Diga: “Where is gate twelve?”',
   },
 };
 
@@ -385,4 +416,17 @@ export function getSkillProgress(
       totals[skill as SkillId] ? Math.round((completedTotals[skill as SkillId] / totals[skill as SkillId]) * 100) : 0,
     ]),
   ) as Record<SkillId, number>;
+}
+
+export function getPracticalChallengeProgress(
+  completedMissions: number,
+  mode: Exclude<MissionMode, 'quiz'>,
+): { completed: number; total: number } {
+  const missions = getCurriculumMissions();
+  const completedCount = Math.min(Math.max(completedMissions, 0), missions.length);
+  const practicalMissions = missions.filter((mission) => mission.mode === mode);
+  return {
+    completed: practicalMissions.filter((mission) => missions.indexOf(mission) < completedCount).length,
+    total: practicalMissions.length,
+  };
 }
