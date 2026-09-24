@@ -19,6 +19,31 @@ export type SyncablePlayerState = {
   ownedItems: string[];
 };
 
+export function getProgressStorageKey(userId: string): string {
+  return `@robolingo/player/${encodeURIComponent(userId)}`;
+}
+
+export function isProgressOwnedByAccount(
+  state: Pick<SyncablePlayerState, 'profileOwnerId'> | { profileOwnerId?: string | null },
+  userId: string,
+): boolean {
+  return state.profileOwnerId === userId;
+}
+
+export function canSyncProgressForAccount(input: {
+  userId: string | null;
+  hydratedAccountId: string | null;
+  profileOwnerId: string | null;
+  remoteSyncAllowed: boolean;
+}): boolean {
+  return Boolean(
+    input.userId &&
+      input.hydratedAccountId === input.userId &&
+      input.profileOwnerId === input.userId &&
+      input.remoteSyncAllowed,
+  );
+}
+
 export function mergeRemoteProgress<T extends SyncablePlayerState>(
   current: T,
   remote: Progress,

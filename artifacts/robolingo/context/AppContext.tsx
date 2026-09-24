@@ -7,6 +7,9 @@ import {
 } from '@workspace/api-client-react';
 import {
   buildProgressPayload,
+  canSyncProgressForAccount,
+  getProgressStorageKey,
+  isProgressOwnedByAccount,
   mergeRemoteProgress,
   serializeProgressPayload,
   type SyncablePlayerState,
@@ -96,21 +99,26 @@ type AppContextValue = {
   hasItem: (itemId: string) => boolean;
 };
 
-const STORAGE_KEY = '@robolingo/player';
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const { isLoaded, isSignedIn, userId } = useAuth();
   const [player, setPlayer] = useState<PlayerState>(DEFAULT_STATE);
   const [hydrated, setHydrated] = useState(false);
+  const [hydratedAccountId, setHydratedAccountId] = useState<string | null>(null);
   const [remoteReady, setRemoteReady] = useState(false);
+  const [remoteSyncAllowed, setRemoteSyncAllowed] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('offline');
   const [lastSyncedPayload, setLastSyncedPayload] = useState('');
   const [lastServerUpdatedAt, setLastServerUpdatedAt] = useState<string | null>(null);
   const latestMutationId = useRef(0);
+  const latestHydrationId = useRef(0);
+  const latestPlayer = useRef(player);
+  latestPlayer.current = player;
+  const activeAccountId = isSignedIn && userId ? userId : null;
   const progressQuery = useGetMyProgress({
     query: {
-      enabled: hydrated && isLoaded && Boolean(isSignedIn && userId),
+      enabled: hydrated && hydratedAccountId === activeAccountId && isLoaded && Boolean(activeAccountId),
       retry: false,
       staleTime: Infinity,
       queryKey: [...getGetMyProgressQueryKey(), userId ?? 'signed-out'],
@@ -124,44 +132,116 @@ export function AppProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY)
-      .then((saved) => {
-        if (saved) {
-          setPlayer({ ...DEFAULT_STATE, ...JSON.parse(saved) });
+    if (!isLoaded) return;
+
+    const hydrationId = latestHydrationId.current + 1;
+    latestHydrationId.current = hydrationId;
+    const accountId = activeAccountId;
+    const current = latestPlayer.current;
+    const hasPendingProfile = current.profileOwnerId === null && current.profileRole !== null;
+    const pendingProfile = hasPendingProfile
+      ? {
+          ...DEFAULT_STATE,
+          name: current.name,
+          selectedThemes: current.selectedThemes,
+          curriculumYear: current.curriculumYear,
         }
-      })
-      .catch(() => undefined)
-      .finally(() => setHydrated(true));
-  }, []);
+      : DEFAULT_STATE;
 
-  useEffect(() => {
-    if (hydrated) {
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(player)).catch(() => undefined);
-    }
-  }, [hydrated, player]);
-
-  useEffect(() => {
+    setHydrated(false);
+    setHydratedAccountId(null);
     setRemoteReady(false);
+    setRemoteSyncAllowed(false);
     setLastSyncedPayload('');
     setLastServerUpdatedAt(null);
     latestMutationId.current += 1;
-    setSyncStatus(isSignedIn && userId ? 'syncing' : 'offline');
-  }, [isSignedIn, userId]);
+    setSyncStatus(accountId ? 'syncing' : 'offline');
+    setPlayer(pendingProfile);
+
+    if (!accountId) {
+      setHydratedAccountId(null);
+      setHydrated(true);
+      return;
+    }
+
+    AsyncStorage.getItem(getProgressStorageKey(accountId))
+      .then((saved) => {
+        if (latestHydrationId.current !== hydrationId) return;
+
+        let nextState = pendingProfile;
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved) as Partial<PlayerState>;
+            if (isProgressOwnedByAccount(parsed, accountId)) {
+              nextState = { ...DEFAULT_STATE, ...parsed, profileOwnerId: accountId };
+            }
+          } catch {
+            // Ignore a corrupt account cache and wait for the remote state.
+          }
+        }
+
+        setPlayer(nextState);
+        setHydratedAccountId(accountId);
+        setHydrated(true);
+      })
+      .catch(() => {
+        if (latestHydrationId.current !== hydrationId) return;
+        setPlayer(pendingProfile);
+        setHydratedAccountId(accountId);
+        setHydrated(true);
+      });
+  }, [activeAccountId, isLoaded]);
 
   useEffect(() => {
-    if (!isSignedIn || !userId || !progressQuery.isFetched) return;
+    if (
+      !hydrated ||
+      !activeAccountId ||
+      hydratedAccountId !== activeAccountId ||
+      !isProgressOwnedByAccount(player, activeAccountId)
+    ) {
+      return;
+    }
+    AsyncStorage.setItem(getProgressStorageKey(activeAccountId), JSON.stringify(player)).catch(() => undefined);
+  }, [activeAccountId, hydrated, hydratedAccountId, player]);
+
+  useEffect(() => {
+    if (
+      !activeAccountId ||
+      hydratedAccountId !== activeAccountId ||
+      !progressQuery.isFetched ||
+      progressQuery.isFetching
+    ) {
+      return;
+    }
 
     if (progressQuery.data) {
-      setPlayer((current) => mergeRemoteProgress(current, progressQuery.data, userId));
+      setPlayer((current) => mergeRemoteProgress(current, progressQuery.data, activeAccountId));
       setLastServerUpdatedAt(progressQuery.data.updatedAt);
     }
 
     setRemoteReady(true);
+    setRemoteSyncAllowed(Boolean(progressQuery.data) || progressQuery.error?.status === 404);
     setSyncStatus(progressQuery.data ? 'synced' : 'offline');
-  }, [isSignedIn, progressQuery.data, progressQuery.isFetched, userId]);
+  }, [
+    activeAccountId,
+    hydratedAccountId,
+    progressQuery.data,
+    progressQuery.error,
+    progressQuery.isFetched,
+    progressQuery.isFetching,
+  ]);
 
   useEffect(() => {
-    if (!remoteReady || !isSignedIn || !userId || player.profileOwnerId !== userId || !player.profileRole) {
+    if (
+      !remoteReady ||
+      !player.profileRole ||
+      !canSyncProgressForAccount({
+        userId: activeAccountId,
+        hydratedAccountId,
+        profileOwnerId: player.profileOwnerId,
+        remoteSyncAllowed,
+      })
+    ) {
       return;
     }
 
@@ -205,9 +285,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     lastServerUpdatedAt,
     lastSyncedPayload,
     player,
+    activeAccountId,
+    hydratedAccountId,
     remoteReady,
+    remoteSyncAllowed,
     mutateProgress,
-    userId,
   ]);
 
   const value = useMemo<AppContextValue>(
@@ -216,8 +298,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       hydrated,
       profileReady:
         hydrated &&
-        player.profileOwnerId !== null &&
-        (!isSignedIn || remoteReady),
+        (!isSignedIn ||
+          (player.profileOwnerId === activeAccountId && remoteReady)),
       syncStatus,
       ensureProfileOwner: (userId) => {
         setPlayer((current) => {
@@ -292,7 +374,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       },
       hasItem: (itemId) => player.ownedItems.includes(itemId),
     }),
-    [hydrated, isSignedIn, player, remoteReady, syncStatus],
+    [activeAccountId, hydrated, isSignedIn, player, remoteReady, syncStatus],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -8,6 +8,9 @@ import { db, pool, progressTable } from "@workspace/db";
 import type { Progress } from "@workspace/api-client-react/progress-sync";
 import {
   buildProgressPayload,
+  canSyncProgressForAccount,
+  getProgressStorageKey,
+  isProgressOwnedByAccount,
   mergeRemoteProgress,
   serializeProgressPayload,
   type SyncablePlayerState,
@@ -132,6 +135,54 @@ describe("progress synchronization", () => {
     online = true;
     await save();
     assert.deepEqual(savedPayload, offlinePayload);
+  });
+
+  it("does not reuse the previous account's local state while the next account hydrates", () => {
+    const previousAccount = makeLocalState();
+    const nextAccountId = `clerk-test-next-account-${randomUUID()}`;
+    const localStorage = new Map([[getProgressStorageKey(testUserId), previousAccount]]);
+    const signedOutState = {
+      ...previousAccount,
+      profileOwnerId: null,
+      profileRole: null,
+    };
+
+    assert.equal(localStorage.get(getProgressStorageKey(nextAccountId)), undefined);
+    assert.equal(isProgressOwnedByAccount(signedOutState, nextAccountId), false);
+    assert.equal(
+      canSyncProgressForAccount({
+        userId: nextAccountId,
+        hydratedAccountId: null,
+        profileOwnerId: signedOutState.profileOwnerId,
+        remoteSyncAllowed: false,
+      }),
+      false,
+    );
+
+    const nextRemote = {
+      ...makeRemoteProgress(),
+      userId: nextAccountId,
+      name: "Nova conta",
+      xp: 95,
+    };
+    const hydrated = mergeRemoteProgress(signedOutState, nextRemote, nextAccountId);
+
+    assert.equal(hydrated.profileOwnerId, nextAccountId);
+    assert.equal(hydrated.name, "Nova conta");
+    assert.equal(hydrated.xp, 95);
+    assert.notEqual(hydrated.xp, previousAccount.xp);
+  });
+
+  it("does not send cached progress when the new account's remote load fails", () => {
+    assert.equal(
+      canSyncProgressForAccount({
+        userId: "clerk-test-next-account",
+        hydratedAccountId: "clerk-test-next-account",
+        profileOwnerId: "clerk-test-next-account",
+        remoteSyncAllowed: false,
+      }),
+      false,
+    );
   });
 });
 
