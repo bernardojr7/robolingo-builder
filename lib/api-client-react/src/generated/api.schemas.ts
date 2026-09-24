@@ -53,6 +53,7 @@ export interface Progress {
   completedMissions: number;
   selectedThemes: InterestId[];
   ownedItems: string[];
+  updatedAt: string;
 }
 
 export interface ProgressInput {
@@ -77,5 +78,6 @@ export interface ProgressInput {
   completedMissions: number;
   selectedThemes: InterestId[];
   ownedItems: string[];
+  updatedAt?: string;
 }
 

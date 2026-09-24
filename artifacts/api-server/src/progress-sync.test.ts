@@ -80,6 +80,7 @@ function makeRemoteProgress(): Progress {
     completedMissions: 31,
     selectedThemes: ["futebol", "musica", "ciencia"],
     ownedItems: ["hair_default", "jacket_neon"],
+    updatedAt: new Date("2026-09-24T00:00:00.000Z").toISOString(),
   };
 }
 
@@ -204,6 +205,7 @@ describe("progress API authentication and persistence", () => {
     assert.equal(saved.streakDays, 9);
     assert.deepEqual(saved.selectedThemes, ["games", "ciencia"]);
     assert.match(String(saved.teacherClassCode), /^ROB-/);
+    assert.ok(Date.parse(String(saved.updatedAt)));
 
     const getResponse = await fetch(`${baseUrl}/progress/me`, {
       headers: { Authorization: `Bearer ${testToken}` },
@@ -215,6 +217,70 @@ describe("progress API authentication and persistence", () => {
     assert.equal(restored.completedMissions, 18);
     assert.equal(restored.streakDays, 9);
     assert.deepEqual(restored.selectedThemes, ["games", "ciencia"]);
+    assert.equal(restored.updatedAt, saved.updatedAt);
+  });
+
+  it("rejects a stale concurrent write instead of overwriting newer progress", async () => {
+    const headers = {
+      Authorization: `Bearer ${testToken}`,
+      "Content-Type": "application/json",
+    };
+    const initialResponse = await fetch(`${baseUrl}/progress/me`, { headers });
+    assert.equal(initialResponse.status, 200);
+    const initial = (await initialResponse.json()) as Record<string, unknown>;
+    const basePayload = {
+      name: String(initial.name),
+      role: initial.role,
+      teacherClassName: String(initial.teacherClassName),
+      teacherClassCode: String(initial.teacherClassCode),
+      level: Number(initial.level),
+      xp: Number(initial.xp),
+      xpNextLevel: Number(initial.xpNextLevel),
+      coins: Number(initial.coins),
+      gems: Number(initial.gems),
+      streakDays: Number(initial.streakDays),
+      completedMissions: Number(initial.completedMissions),
+      selectedThemes: initial.selectedThemes,
+      ownedItems: initial.ownedItems,
+      updatedAt: String(initial.updatedAt),
+    };
+    const firstWrite = {
+      ...basePayload,
+      xp: 700,
+      completedMissions: 20,
+    };
+    const secondWrite = {
+      ...basePayload,
+      xp: 850,
+      completedMissions: 21,
+    };
+
+    const responses = await Promise.all([
+      fetch(`${baseUrl}/progress/me`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(firstWrite),
+      }),
+      fetch(`${baseUrl}/progress/me`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(secondWrite),
+      }),
+    ]);
+
+    assert.deepEqual(
+      responses.map((response) => response.status).sort((a, b) => a - b),
+      [200, 409],
+    );
+
+    const finalResponse = await fetch(`${baseUrl}/progress/me`, {
+      headers: { Authorization: `Bearer ${testToken}` },
+    });
+    const final = (await finalResponse.json()) as Record<string, unknown>;
+    assert.ok(
+      (final.xp === firstWrite.xp && final.completedMissions === firstWrite.completedMissions) ||
+        (final.xp === secondWrite.xp && final.completedMissions === secondWrite.completedMissions),
+    );
   });
 
   it("rejects requests without a valid Clerk token", async () => {

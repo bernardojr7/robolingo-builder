@@ -34,7 +34,8 @@ export const GetMyProgressResponse = zod.object({
   "streakDays": zod.number().int(),
   "completedMissions": zod.number().int(),
   "selectedThemes": zod.array(zod.enum(['games', 'futebol', 'moda', 'musica', 'anime', 'culinaria', 'leitura', 'matematica', 'ciencia', 'historia', 'geografia', 'hq', 'filme', 'serie', 'viagem'])),
-  "ownedItems": zod.array(zod.string())
+  "ownedItems": zod.array(zod.string()),
+  "updatedAt": zod.coerce.date()
 })
 
 
@@ -69,7 +70,8 @@ export const UpdateMyProgressBody = zod.object({
   "streakDays": zod.number().int().min(updateMyProgressBodyStreakDaysMin),
   "completedMissions": zod.number().int().min(updateMyProgressBodyCompletedMissionsMin),
   "selectedThemes": zod.array(zod.enum(['games', 'futebol', 'moda', 'musica', 'anime', 'culinaria', 'leitura', 'matematica', 'ciencia', 'historia', 'geografia', 'hq', 'filme', 'serie', 'viagem'])),
-  "ownedItems": zod.array(zod.string())
+  "ownedItems": zod.array(zod.string()),
+  "updatedAt": zod.coerce.date().optional()
 })
 
 export const UpdateMyProgressResponse = zod.object({
@@ -86,7 +88,8 @@ export const UpdateMyProgressResponse = zod.object({
   "streakDays": zod.number().int(),
   "completedMissions": zod.number().int(),
   "selectedThemes": zod.array(zod.enum(['games', 'futebol', 'moda', 'musica', 'anime', 'culinaria', 'leitura', 'matematica', 'ciencia', 'historia', 'geografia', 'hq', 'filme', 'serie', 'viagem'])),
-  "ownedItems": zod.array(zod.string())
+  "ownedItems": zod.array(zod.string()),
+  "updatedAt": zod.coerce.date()
 })
 
 
@@ -107,7 +110,8 @@ export const ListStudentProgressResponseItem = zod.object({
   "streakDays": zod.number().int(),
   "completedMissions": zod.number().int(),
   "selectedThemes": zod.array(zod.enum(['games', 'futebol', 'moda', 'musica', 'anime', 'culinaria', 'leitura', 'matematica', 'ciencia', 'historia', 'geografia', 'hq', 'filme', 'serie', 'viagem'])),
-  "ownedItems": zod.array(zod.string())
+  "ownedItems": zod.array(zod.string()),
+  "updatedAt": zod.coerce.date()
 })
 export const ListStudentProgressResponse = zod.array(ListStudentProgressResponseItem)
 

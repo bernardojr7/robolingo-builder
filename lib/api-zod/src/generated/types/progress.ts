@@ -23,4 +23,5 @@ export interface Progress {
   completedMissions: number;
   selectedThemes: InterestId[];
   ownedItems: string[];
+  updatedAt: Date;
 }

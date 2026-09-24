@@ -26,6 +26,7 @@ function toResponse(row: typeof progressTable.$inferSelect) {
     completedMissions: row.completedMissions,
     selectedThemes: row.selectedThemes,
     ownedItems: row.ownedItems,
+    updatedAt: row.updatedAt.toISOString(),
   });
 }
 
@@ -76,13 +77,11 @@ export function createProgressRouter(
   }
 
   const existing = await db
-    .select({
-      role: progressTable.role,
-      teacherClassCode: progressTable.teacherClassCode,
-    })
+    .select()
     .from(progressTable)
     .where(eq(progressTable.userId, req.auth!.userId));
   const role = parsed.data.role;
+  const { updatedAt: clientUpdatedAt, ...progressData } = parsed.data;
 
   if (existing[0] && existing[0].role !== role) {
     res.status(400).json({ error: "Account role cannot be changed" });
@@ -117,21 +116,42 @@ export function createProgressRouter(
     }
   }
 
-  const [row] = await db
-    .insert(progressTable)
-    .values({
-      userId: req.auth!.userId,
-      ...parsed.data,
-      teacherClassCode,
-      updatedAt: new Date(),
-    })
-    .onConflictDoUpdate({
-      target: progressTable.userId,
-      set: { ...parsed.data, teacherClassCode, updatedAt: new Date() },
-    })
-    .returning();
+  let row: typeof progressTable.$inferSelect | undefined;
+  if (!existing[0]) {
+    [row] = await db
+      .insert(progressTable)
+      .values({
+        userId: req.auth!.userId,
+        ...progressData,
+        teacherClassCode,
+        updatedAt: new Date(),
+      })
+      .returning();
+  } else {
+    if (!clientUpdatedAt) {
+      res.status(409).json({ error: "Progress version is required" });
+      return;
+    }
 
-  res.json(UpdateMyProgressResponse.parse(toResponse(row)));
+    const [updated] = await db
+      .update(progressTable)
+      .set({ ...progressData, teacherClassCode, updatedAt: new Date() })
+      .where(
+        and(
+          eq(progressTable.userId, req.auth!.userId),
+          eq(progressTable.updatedAt, new Date(clientUpdatedAt)),
+        ),
+      )
+      .returning();
+
+    if (!updated) {
+      res.status(409).json({ error: "Progress update is stale" });
+      return;
+    }
+    row = updated;
+  }
+
+  res.json(UpdateMyProgressResponse.parse(toResponse(row!)));
   });
 
   router.get("/progress/students", authMiddleware, async (req, res): Promise<void> => {

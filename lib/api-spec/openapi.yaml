@@ -61,6 +61,8 @@ paths:
                 $ref: "#/components/schemas/Progress"
         "400":
           description: Invalid progress or class code
+        "409":
+          description: The update is based on a stale progress version
         "401":
           description: Authentication required
   /progress/students:
@@ -146,6 +148,9 @@ components:
           type: array
           items:
             type: string
+        updatedAt:
+          type: string
+          format: date-time
       required:
         - userId
         - name
@@ -161,6 +166,7 @@ components:
         - completedMissions
         - selectedThemes
         - ownedItems
+        - updatedAt
     ProgressInput:
       type: object
       properties:
@@ -202,6 +208,9 @@ components:
           type: array
           items:
             type: string
+        updatedAt:
+          type: string
+          format: date-time
       required:
         - name
         - role

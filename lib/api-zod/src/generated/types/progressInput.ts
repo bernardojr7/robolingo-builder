@@ -30,4 +30,5 @@ export interface ProgressInput {
   completedMissions: number;
   selectedThemes: InterestId[];
   ownedItems: string[];
+  updatedAt?: Date;
 }

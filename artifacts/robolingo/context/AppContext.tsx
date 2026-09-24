@@ -11,7 +11,7 @@ import {
   serializeProgressPayload,
   type SyncablePlayerState,
 } from '@workspace/api-client-react/progress-sync';
-import React, { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, ReactNode, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { CurriculumYearId } from '@/data/gameDesign';
 
 export type InterestId =
@@ -106,6 +106,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [remoteReady, setRemoteReady] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('offline');
   const [lastSyncedPayload, setLastSyncedPayload] = useState('');
+  const [lastServerUpdatedAt, setLastServerUpdatedAt] = useState<string | null>(null);
+  const latestMutationId = useRef(0);
   const progressQuery = useGetMyProgress({
     query: {
       enabled: hydrated && isLoaded && Boolean(isSignedIn && userId),
@@ -141,6 +143,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setRemoteReady(false);
     setLastSyncedPayload('');
+    setLastServerUpdatedAt(null);
+    latestMutationId.current += 1;
     setSyncStatus(isSignedIn && userId ? 'syncing' : 'offline');
   }, [isSignedIn, userId]);
 
@@ -149,6 +153,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     if (progressQuery.data) {
       setPlayer((current) => mergeRemoteProgress(current, progressQuery.data, userId));
+      setLastServerUpdatedAt(progressQuery.data.updatedAt);
     }
 
     setRemoteReady(true);
@@ -164,15 +169,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const serializedPayload = serializeProgressPayload(payload);
     if (serializedPayload === lastSyncedPayload) return;
 
+    const mutationId = latestMutationId.current + 1;
+    latestMutationId.current = mutationId;
+    const requestPayload = {
+      ...payload,
+      ...(lastServerUpdatedAt ? { updatedAt: lastServerUpdatedAt } : {}),
+    };
     setSyncStatus('syncing');
     mutateProgress(
-      { data: payload },
+      { data: requestPayload },
       {
         onSuccess: (savedProgress) => {
+          if (mutationId !== latestMutationId.current) return;
           setPlayer((current) => ({
             ...current,
             teacherClassCode: savedProgress.teacherClassCode,
           }));
+          setLastServerUpdatedAt(savedProgress.updatedAt);
           setLastSyncedPayload(
             serializeProgressPayload({
               ...payload,
@@ -182,12 +195,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setSyncStatus('synced');
         },
         onError: () => {
+          if (mutationId !== latestMutationId.current) return;
           setSyncStatus('error');
         },
       },
     );
   }, [
     isSignedIn,
+    lastServerUpdatedAt,
     lastSyncedPayload,
     player,
     remoteReady,
