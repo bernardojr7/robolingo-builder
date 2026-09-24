@@ -1,0 +1,1791 @@
+# 🎮 ROBOLINGO
+
+## Game Design Document — GDD
+
+### Versão 1.0 — Projeto Inicial
+
+**Nome do jogo:** Robolingo
+**Gênero:** Educational Adventure / RPG 2D / Open World
+**Plataforma inicial:** Web App / PWA
+**Público-alvo:** Estudantes do 6º ao 9º ano do Ensino Fundamental
+**Área:** Língua Inglesa
+**IA:** Geração e adaptação de conteúdos pedagógicos
+**Modelo:** Gamificação + aprendizagem baseada em missões + aprendizagem adaptativa
+
+---
+
+# 1. VISÃO GERAL
+
+## 1.1 Conceito
+
+**Robolingo** é um aplicativo educacional de Língua Inglesa desenvolvido no formato de uma aventura 2D em mundo aberto.
+
+O estudante cria seu personagem, explora diferentes regiões, conversa com personagens, completa missões, enfrenta desafios, desbloqueia áreas, conquista itens, acumula XP e desenvolve suas habilidades em Língua Inglesa.
+
+O grande diferencial do Robolingo é que ele será desenvolvido **com participação dos próprios estudantes**, utilizando pesquisas de preferência, testes, feedbacks e observações realizadas durante o processo de desenvolvimento.
+
+### Conceito central:
+
+> **O aluno não entra no Robolingo para fazer uma atividade. Ele entra para viver uma aventura em inglês.**
+
+---
+
+# 2. PROPÓSITO EDUCACIONAL
+
+O Robolingo busca transformar o aprendizado da Língua Inglesa em uma experiência:
+
+* interativa;
+* divertida;
+* progressiva;
+* personalizada;
+* contextualizada;
+* baseada em desafios;
+* orientada por objetivos;
+* apoiada por inteligência artificial;
+* acompanhada pelo professor.
+
+O aplicativo não pretende substituir o professor.
+
+O professor permanece como **mediador pedagógico**, enquanto o Robolingo funciona como ambiente de prática, revisão, exploração e acompanhamento da aprendizagem.
+
+---
+
+# 3. PÚBLICO-ALVO
+
+## Público principal
+
+Estudantes:
+
+* 6º ano;
+* 7º ano;
+* 8º ano;
+* 9º ano.
+
+## Público secundário
+
+Professores de Língua Inglesa que desejam:
+
+* criar atividades;
+* acompanhar desempenho;
+* identificar dificuldades;
+* utilizar gamificação;
+* gerar conteúdos com IA;
+* estimular a prática fora da sala de aula.
+
+---
+
+# 4. PRINCÍPIO FUNDAMENTAL
+
+O Robolingo será construído a partir de três pilares:
+
+### 👨‍🏫 PROFESSOR
+
+Define objetivos, acompanha resultados e valida conteúdos.
+
+### 👨‍🎓 ALUNO
+
+Explora, joga, aprende, participa das decisões e fornece feedback.
+
+### 🤖 TECNOLOGIA + IA
+
+Personaliza experiências, auxilia na criação de conteúdos e organiza dados de aprendizagem.
+
+### Fórmula do projeto:
+
+**Professor + Aluno + Game Design + IA + Inglês**
+
+---
+
+# 5. DIFERENCIAL DO ROBOLINGO
+
+O Robolingo não deve ser apresentado como simplesmente:
+
+> "Um aplicativo para responder questões de inglês."
+
+Sua identidade será:
+
+> **Uma aventura digital na qual aprender inglês é necessário para avançar no mundo do jogo.**
+
+O conhecimento deixa de ser apenas uma atividade e passa a ser uma ferramenta para progredir.
+
+---
+
+# 6. UNIVERSO DO JOGO
+
+## 6.1 História-base
+
+O universo do Robolingo é formado por diferentes regiões onde as palavras, histórias e conhecimentos foram perdidos.
+
+O jogador recebe a missão de explorar esse mundo, ajudar seus habitantes e recuperar o conhecimento perdido.
+
+Cada região apresenta novos personagens, situações comunicativas e desafios.
+
+Conforme o estudante aprende inglês, novas áreas são desbloqueadas.
+
+---
+
+# 7. O PERSONAGEM PRINCIPAL
+
+O estudante cria seu próprio avatar.
+
+## Personalização inicial
+
+* cabelo;
+* rosto;
+* roupas;
+* calçados;
+* acessórios;
+* mochila;
+* aparência;
+* nome do personagem.
+
+## Personalização futura
+
+* roupas comuns;
+* roupas raras;
+* roupas épicas;
+* roupas lendárias;
+* chapéus;
+* óculos;
+* mochilas;
+* pets;
+* itens especiais.
+
+A personalização não terá apenas finalidade estética.
+
+Alguns itens poderão ser recompensas por conquistas.
+
+---
+
+# 8. MUNDO ABERTO 2D
+
+O mapa será dividido em regiões.
+
+### 🏠 ROBOLINGO VILLAGE
+
+Conteúdos introdutórios.
+
+### 🌲 MYSTERY FOREST
+
+Vocabulário, descrições, rotina e situações cotidianas.
+
+### 🏙️ ENGLISH CITY
+
+Situações comunicativas e conteúdos gramaticais mais complexos.
+
+### 🏖️ SUNSET BEACH
+
+Vocabulário, diálogos e situações de viagem/lazer.
+
+### ✈️ INTERNATIONAL AIRPORT
+
+Inglês aplicado a situações reais.
+
+### 🏰 MYSTERY CASTLE
+
+Desafios avançados.
+
+### 🚀 FUTURE WORLD
+
+Conteúdos e desafios especiais.
+
+Novas regiões poderão ser adicionadas posteriormente.
+
+---
+
+# 9. PROGRESSÃO DO MAPA
+
+O mapa será inicialmente parcialmente bloqueado.
+
+Exemplo:
+
+```text
+             🏰 CASTLE
+                🔒
+                 |
+      🌲 FOREST —— 🏙️ CITY
+         |            |
+         |            |
+     🏠 VILLAGE —— 🏖️ BEACH
+                      |
+                   ✈️ AIRPORT
+```
+
+O estudante desbloqueia novas regiões cumprindo requisitos.
+
+Exemplo:
+
+> Complete 5 Village Missions.
+
+↓
+
+🔓 Mystery Forest Unlocked!
+
+---
+
+# 10. SISTEMA DE NÍVEIS DE INGLÊS
+
+Esta será uma das principais características pedagógicas do Robolingo.
+
+O nível determina principalmente **o grau de exposição do estudante à Língua Inglesa**.
+
+## 🟢 EASY — EXPLORER
+
+Predominância do português.
+
+**Objetivo:** introdução e segurança.
+
+Uso aproximado:
+
+🇧🇷 Português: 70–90%
+🇺🇸 Inglês: 10–30%
+
+Exemplo:
+
+> Escolha a palavra em inglês que significa "casa".
+
+🏠 HOUSE
+
+---
+
+## 🔵 MEDIUM — ADVENTURER
+
+Português e inglês aparecem de forma equilibrada.
+
+Uso aproximado:
+
+🇧🇷 Português: 40–60%
+🇺🇸 Inglês: 40–60%
+
+Exemplo:
+
+> Talk to Sarah and find the **school bag**.
+
+O sistema ainda fornece suporte em português quando necessário.
+
+---
+
+## 🟠 DIFFICULT — HERO
+
+Predominância do inglês.
+
+Uso aproximado:
+
+🇧🇷 Português: 10–20%
+🇺🇸 Inglês: 80–90%
+
+Exemplo:
+
+> Talk to the villagers and find the missing backpack.
+
+O estudante precisa interpretar instruções, diálogos e desafios.
+
+---
+
+## 🔴 HARD — LEGEND
+
+Experiência totalmente em inglês.
+
+🇺🇸 Inglês: 100%
+
+Exemplo:
+
+> The village is in danger. Find the missing map before sunset.
+
+Não haverá tradução automática como padrão.
+
+O estudante deverá utilizar as próprias estratégias de compreensão.
+
+---
+
+# 11. PROGRESSÃO DA DIFICULDADE
+
+Os níveis não devem funcionar apenas como "fácil, médio e difícil".
+
+Eles representam uma **progressão de imersão linguística**.
+
+### EASY
+
+"Eu reconheço."
+
+### MEDIUM
+
+"Eu começo a compreender."
+
+### DIFFICULT
+
+"Eu consigo usar."
+
+### HARD
+
+"Eu consigo navegar em inglês."
+
+---
+
+# 12. XP — EXPERIENCE POINTS
+
+Cada atividade gera XP.
+
+### Sugestão inicial
+
+| Nível     | XP base |
+| --------- | ------: |
+| EASY      |   50 XP |
+| MEDIUM    |  100 XP |
+| DIFFICULT |  175 XP |
+| HARD      |  300 XP |
+
+Bônus poderão ser aplicados.
+
+### Bônus
+
+🔥 Streak
+🎯 Primeiro acesso do dia
+🏆 Missão perfeita
+👹 Boss derrotado
+📚 Sequência de atividades
+
+---
+
+# 13. NÍVEL DO PERSONAGEM
+
+O XP acumulado determina o nível do jogador.
+
+Exemplo:
+
+**Level 1 — Beginner**
+
+↓
+
+**Level 5 — Explorer**
+
+↓
+
+**Level 10 — Adventurer**
+
+↓
+
+**Level 20 — Hero**
+
+↓
+
+**Level 30 — Master**
+
+↓
+
+**Level 50 — Legend**
+
+O número de níveis poderá ser ajustado após testes.
+
+---
+
+# 14. MOEDAS
+
+O estudante também ganhará moedas:
+
+🪙 **Robocoins**
+
+As moedas poderão ser utilizadas na loja.
+
+Exemplos:
+
+* roupas;
+* acessórios;
+* pets;
+* itens;
+* decoração;
+* elementos do avatar.
+
+As moedas não deverão permitir vantagens pedagógicas injustas.
+
+---
+
+# 15. SISTEMA DE STREAK
+
+## 🔥 DAILY STREAK
+
+O estudante recebe uma sequência por realizar uma atividade diária.
+
+Exemplo:
+
+🔥 1 dia
+🔥 2 dias
+🔥 3 dias
+🔥 7 dias
+🔥 14 dias
+🔥 30 dias
+🔥 60 dias
+
+Recompensas especiais poderão ser desbloqueadas.
+
+---
+
+# 16. DAILY QUEST
+
+Todos os dias o sistema poderá apresentar:
+
+## 🎯 TODAY'S QUEST
+
+Uma pequena atividade de 2–5 minutos.
+
+Exemplo:
+
+> Listen and choose the correct answer.
+
+Ao completar:
+
+**+50 XP**
+
+**+20 Robocoins**
+
+**🔥 Streak +1**
+
+---
+
+# 17. MISSÕES
+
+As missões serão o principal mecanismo pedagógico do jogo.
+
+Cada missão possuirá:
+
+* título;
+* história;
+* objetivo;
+* nível;
+* habilidades;
+* conteúdo;
+* NPCs;
+* desafios;
+* recompensa.
+
+### Exemplo
+
+## 🎯 THE LOST BACKPACK
+
+**Difficulty:** 🟠 HERO
+
+**Skills:**
+
+* Vocabulary
+* Reading
+* Listening
+
+**Objective:**
+
+> Find Sarah's missing backpack.
+
+**Reward:**
+
+⭐ 175 XP
+🪙 80 Robocoins
+
+---
+
+# 18. ESTRUTURA DE UMA MISSÃO
+
+Uma missão poderá seguir:
+
+**EXPLORAÇÃO**
+
+↓
+
+**DIÁLOGO**
+
+↓
+
+**DESAFIO**
+
+↓
+
+**LISTENING**
+
+↓
+
+**GRAMMAR**
+
+↓
+
+**FINAL CHALLENGE**
+
+↓
+
+🏆 **MISSION COMPLETE**
+
+---
+
+# 19. TIPOS DE MISSÃO
+
+## 🧭 Exploration Quest
+
+Explorar o mapa.
+
+## 💬 Dialogue Quest
+
+Conversar com NPCs.
+
+## 🎧 Listening Quest
+
+Ouvir e compreender.
+
+## 📖 Reading Quest
+
+Ler textos.
+
+## ✍️ Grammar Quest
+
+Resolver desafios gramaticais.
+
+## 🧠 Vocabulary Quest
+
+Aprender e utilizar palavras.
+
+## 🗣️ Speaking Quest
+
+Falar em inglês.
+
+## 👹 Boss Quest
+
+Desafio final de unidade.
+
+## 🔎 Mystery Quest
+
+Resolver enigmas utilizando inglês.
+
+---
+
+# 20. BOSS BATTLES
+
+Cada unidade poderá terminar com um Boss.
+
+Exemplo:
+
+## 👹 THE GRAMMAR MONSTER
+
+O Boss apresenta desafios.
+
+> Yesterday, I ___ to school.
+
+A) go
+B) went
+C) going
+
+Resposta correta:
+
+💥 ATTACK!
+
+Após uma sequência de desafios:
+
+👹 Boss defeated!
+
+Recompensa:
+
+⭐ XP
+🪙 Coins
+🏆 Achievement
+🎁 Rare Item
+
+---
+
+# 21. NPCs
+
+O mundo será habitado por personagens.
+
+Cada NPC possui uma função.
+
+Exemplos:
+
+👩‍🏫 Teacher
+👨‍🍳 Chef
+🧑‍✈️ Pilot
+👮 Police Officer
+🧑‍🔬 Scientist
+🧙 Mystery Character
+👨‍🌾 Farmer
+🧑‍🎨 Artist
+
+Eles apresentam situações comunicativas.
+
+---
+
+# 22. INGLÊS CONTEXTUALIZADO
+
+O Robolingo deverá priorizar o uso do inglês em situações.
+
+Em vez de apenas:
+
+> Complete the sentence.
+
+O aluno poderá enfrentar:
+
+### 🍔 RESTAURANT QUEST
+
+> What would you like?
+
+### ✈️ AIRPORT QUEST
+
+> Where are you going?
+
+### 🏪 SHOP QUEST
+
+> How much is it?
+
+### 🏫 SCHOOL QUEST
+
+> What is your favorite subject?
+
+Assim, gramática e vocabulário aparecem dentro de situações.
+
+---
+
+# 23. SKILLS
+
+O perfil do estudante apresentará habilidades.
+
+### 📚 Grammar
+
+### 🧠 Vocabulary
+
+### 📖 Reading
+
+### 🎧 Listening
+
+### 🗣️ Speaking
+
+### 💬 Communication
+
+Cada uma terá progresso.
+
+Exemplo:
+
+Grammar:
+
+███████░░░ 70%
+
+Listening:
+
+█████░░░░░ 50%
+
+---
+
+# 24. SISTEMA DE CONQUISTAS
+
+## 🏆 ACHIEVEMENTS
+
+### First Mission
+
+Complete sua primeira missão.
+
+### Word Collector
+
+Aprenda 100 palavras.
+
+### Listening Master
+
+Complete 20 atividades de listening.
+
+### Grammar Hero
+
+Complete 30 desafios gramaticais.
+
+### Boss Slayer
+
+Derrote 5 Bosses.
+
+### 7-Day Streak
+
+Estude durante 7 dias consecutivos.
+
+### English Legend
+
+Alcance o nível máximo.
+
+---
+
+# 25. INVENTÁRIO
+
+## 🎒 INVENTORY
+
+Categorias:
+
+* Clothes;
+* Accessories;
+* Pets;
+* Special Items;
+* Collectibles.
+
+Itens poderão possuir raridade:
+
+⚪ Common
+🔵 Rare
+🟣 Epic
+🟠 Legendary
+
+---
+
+# 26. PETS
+
+O jogador poderá desbloquear companheiros.
+
+Exemplos:
+
+🐶 Dog
+🐱 Cat
+🦊 Fox
+🐼 Panda
+🐉 Dragon
+
+Pets poderão ser obtidos através de conquistas e eventos.
+
+---
+
+# 27. LOJA
+
+## 🛒 ROBO SHOP
+
+O jogador utiliza Robocoins para adquirir itens.
+
+A loja poderá ser atualizada periodicamente.
+
+### Categorias
+
+👕 Clothes
+🎩 Accessories
+🎒 Backpacks
+🐾 Pets
+🏠 Decorations
+
+---
+
+# 28. RANKING
+
+O Robolingo terá diferentes rankings.
+
+## 🌎 Global Ranking
+
+Todos os jogadores.
+
+## 🏫 School Ranking
+
+Alunos da escola.
+
+## 👥 Class Ranking
+
+Alunos da turma.
+
+## 🏆 Achievement Ranking
+
+Maior número de conquistas.
+
+## 🔥 Streak Ranking
+
+Maior sequência.
+
+O ranking deverá ser utilizado como motivação, evitando transformar o sistema em mecanismo de constrangimento.
+
+---
+
+# 29. SISTEMA DE TURMAS
+
+O professor cria uma turma.
+
+Exemplo:
+
+**8º ANO A**
+
+O sistema gera:
+
+### CLASS CODE
+
+`ROB-8A-742`
+
+O aluno utiliza o código para entrar na turma.
+
+---
+
+# 30. CADASTRO DO ALUNO
+
+Campos iniciais:
+
+* nome;
+* e-mail;
+* senha;
+* código da turma;
+* avatar.
+
+O sistema poderá solicitar informações adicionais posteriormente.
+
+---
+
+# 31. CADASTRO DO PROFESSOR
+
+Campos:
+
+* nome;
+* e-mail;
+* senha;
+* identificação profissional;
+* criação da turma.
+
+O professor receberá um código exclusivo.
+
+---
+
+# 32. PAINEL DO ALUNO
+
+Tela principal:
+
+```text
+┌────────────────────────────┐
+│ 👤 PLAYER                  │
+│ ⭐ LEVEL 12    🔥 8 DAYS   │
+│ 🪙 2.450 COINS             │
+├────────────────────────────┤
+│                            │
+│       🗺️ ADVENTURE         │
+│                            │
+│    [ CONTINUE QUEST ]      │
+│                            │
+├────────────────────────────┤
+│ 🎯 Daily Quest             │
+│ 🏆 Achievements            │
+│ 🎒 Inventory               │
+│ 🧑 Avatar                  │
+│ 📊 Progress                │
+│ 🏆 Ranking                 │
+└────────────────────────────┘
+```
+
+---
+
+# 33. PAINEL DO PROFESSOR
+
+## Dashboard
+
+O professor verá:
+
+### Minha turma
+
+👥 28 alunos
+
+### Atividade
+
+🟢 23 ativos hoje
+
+### Missões
+
+🎯 82% concluídas
+
+### Conteúdo
+
+📚 Simple Past
+
+### Dificuldade
+
+⚠️ Irregular Verbs
+
+---
+
+# 34. ACOMPANHAMENTO INDIVIDUAL
+
+O professor poderá selecionar um estudante.
+
+### STUDENT PROFILE
+
+**Level:** 18
+**XP:** 4.520
+**Streak:** 🔥 12
+**Missions:** 37
+
+### Skills
+
+Vocabulary — 85%
+
+Grammar — 62%
+
+Reading — 78%
+
+Listening — 54%
+
+Speaking — 47%
+
+O sistema poderá indicar:
+
+> ⚠️ Student may need additional practice in Listening.
+
+---
+
+# 35. SISTEMA DE APRENDIZAGEM ADAPTATIVA
+
+O Robolingo poderá analisar os resultados do aluno.
+
+Exemplo:
+
+Aluno:
+
+Vocabulary: 90%
+
+Grammar: 45%
+
+Reading: 80%
+
+Listening: 50%
+
+O sistema poderá recomendar:
+
+### 🎯 RECOMMENDED QUEST
+
+**Grammar Recovery Mission**
+
+Foco:
+
+**Simple Past + Irregular Verbs**
+
+---
+
+# 36. INTELIGÊNCIA ARTIFICIAL
+
+A IA será utilizada como ferramenta auxiliar.
+
+## AI QUEST GENERATOR
+
+Professor seleciona:
+
+**Grade:** 8th
+**Content:** Simple Past
+**Difficulty:** Hero
+
+A IA gera:
+
+* história;
+* NPC;
+* diálogo;
+* perguntas;
+* alternativas;
+* desafios;
+* vocabulário;
+* recompensas.
+
+O professor revisa antes da publicação.
+
+---
+
+# 37. PRINCÍPIO DA IA
+
+A IA não publica automaticamente conteúdo pedagógico.
+
+Fluxo:
+
+**Professor**
+
+↓
+
+Seleciona conteúdo
+
+↓
+
+**IA gera**
+
+↓
+
+**Professor revisa**
+
+↓
+
+Editar / Aprovar / Regenerar
+
+↓
+
+**Publicar**
+
+---
+
+# 38. AI ADAPTIVE QUEST
+
+Futuramente, a IA poderá criar uma missão baseada nos erros do estudante.
+
+Exemplo:
+
+> Student frequently misses irregular verbs.
+
+A IA cria:
+
+### THE TIME TRAVELER
+
+Foco:
+
+Simple Past + irregular verbs.
+
+---
+
+# 39. SISTEMA DE FEEDBACK
+
+Depois de uma missão:
+
+> ⭐ How was this mission?
+
+😄 Easy
+🙂 Good
+😐 Difficult
+😵 Very difficult
+
+E:
+
+> What should we improve?
+
+* More challenges
+* More story
+* More rewards
+* More English
+* More explanations
+
+Esses dados serão importantes para futuras versões.
+
+---
+
+# 40. STUDENT VOICE
+
+O Robolingo deverá manter uma área de participação dos estudantes.
+
+Os alunos poderão votar em:
+
+* novos mapas;
+* personagens;
+* pets;
+* roupas;
+* desafios;
+* temas;
+* novas missões.
+
+Assim:
+
+> **Os alunos não são apenas usuários do Robolingo. Eles também participam da construção do jogo.**
+
+---
+
+# 41. PESQUISA INICIAL
+
+A pesquisa realizada através do Google Forms será utilizada como base para decisões de design.
+
+Os resultados deverão orientar:
+
+* estilo visual;
+* tipos de personagens;
+* recompensas;
+* preferência de desafios;
+* preferência por mapas;
+* preferência por competição;
+* preferência por personalização;
+* preferência por atividades.
+
+A pesquisa deverá ser incorporada ao processo metodológico do projeto.
+
+---
+
+# 42. CONTEÚDOS POR ANO
+
+## 6º ANO
+
+Conteúdos introdutórios:
+
+* Greetings;
+* Introductions;
+* Numbers;
+* Colors;
+* Family;
+* School objects;
+* Days of the week;
+* Months;
+* Alphabet;
+* Basic vocabulary;
+* Verb to be;
+* Personal information.
+
+---
+
+## 7º ANO
+
+* Simple Present;
+* Daily routine;
+* Adjectives;
+* Can / Can't;
+* There is / There are;
+* Places;
+* Food;
+* Hobbies;
+* Frequency;
+* Basic communication.
+
+---
+
+## 8º ANO
+
+* Simple Past;
+* Future;
+* Comparatives;
+* Superlatives;
+* Modal verbs;
+* Countable / Uncountable;
+* Some / Any;
+* Experiences;
+* Travel;
+* Reading comprehension.
+
+---
+
+## 9º ANO
+
+* Present Perfect;
+* Past Continuous;
+* Future forms;
+* Modal verbs;
+* Reading strategies;
+* Text interpretation;
+* Vocabulary expansion;
+* Communication;
+* Cultural topics;
+* Real-world English.
+
+---
+
+# 43. SISTEMA DE CONTEÚDO
+
+Os conteúdos serão organizados em:
+
+**ANO**
+
+↓
+
+**UNIDADE**
+
+↓
+
+**TEMA**
+
+↓
+
+**MISSÃO**
+
+↓
+
+**DESAFIOS**
+
+↓
+
+**RECOMPENSAS**
+
+Exemplo:
+
+8º ano
+
+↓
+
+Simple Past
+
+↓
+
+The Lost Backpack
+
+↓
+
+Reading + Grammar + Listening
+
+↓
+
+Boss Battle
+
+---
+
+# 44. BANCO DE DADOS
+
+A primeira arquitetura recomendada será:
+
+## 🔥 Firebase
+
+Componentes principais:
+
+### Firebase Authentication
+
+Responsável por:
+
+* login;
+* cadastro;
+* autenticação;
+* recuperação de senha;
+* controle de usuários.
+
+### Cloud Firestore
+
+Responsável pelos dados:
+
+* usuários;
+* turmas;
+* progresso;
+* XP;
+* moedas;
+* missões;
+* rankings;
+* conquistas;
+* inventário;
+* resultados.
+
+### Firebase Storage
+
+Responsável por:
+
+* imagens;
+* avatares;
+* áudios;
+* recursos do jogo;
+* outros arquivos.
+
+### Cloud Functions
+
+Para processos de backend, quando necessário.
+
+---
+
+# 45. HOSPEDAGEM E DESENVOLVIMENTO
+
+## GitHub
+
+Será utilizado para:
+
+* armazenamento do código;
+* controle de versões;
+* branches;
+* histórico;
+* colaboração;
+* issues;
+* documentação.
+
+## Vercel
+
+Responsável pela publicação da aplicação web.
+
+Fluxo:
+
+```text
+DESENVOLVIMENTO
+       ↓
+    GITHUB
+       ↓
+    VERCEL
+       ↓
+ ROBOLINGO ONLINE
+       ↓
+    FIREBASE
+       ↓
+     DADOS
+```
+
+---
+
+# 46. ARQUITETURA INICIAL
+
+### Frontend
+
+Aplicação web responsiva.
+
+Possível stack:
+
+**Next.js + React + TypeScript**
+
+### Backend / Serviços
+
+**Firebase**
+
+### Banco
+
+**Cloud Firestore**
+
+### Autenticação
+
+**Firebase Authentication**
+
+### Arquivos
+
+**Firebase Storage**
+
+### Hospedagem
+
+**Vercel**
+
+### Repositório
+
+**GitHub**
+
+---
+
+# 47. POR QUE ESSA ARQUITETURA?
+
+A combinação foi escolhida porque permite começar relativamente simples e crescer posteriormente.
+
+### Vantagens
+
+* autenticação pronta;
+* banco de dados em nuvem;
+* atualização em tempo real;
+* integração com aplicações web;
+* armazenamento de arquivos;
+* possibilidade de funções serverless;
+* integração com GitHub;
+* deploy automatizado pela Vercel;
+* boa estrutura para MVP.
+
+---
+
+# 48. ALTERNATIVAS TECNOLÓGICAS
+
+O projeto poderá futuramente considerar alternativas como:
+
+### Supabase
+
+Boa alternativa caso o projeto precise de:
+
+* banco PostgreSQL;
+* consultas relacionais mais complexas;
+* maior controle sobre estrutura SQL.
+
+### Unity / Godot
+
+Podem ser considerados caso o Robolingo evolua para:
+
+* aplicativo mobile nativo;
+* gráficos 2D mais avançados;
+* física;
+* animações complexas;
+* experiências mais próximas de um jogo tradicional.
+
+### Estratégia recomendada
+
+**Não começar com a arquitetura mais complexa.**
+
+Começar com:
+
+**Next.js + Firebase + Vercel + GitHub**
+
+e validar o produto.
+
+Depois, se necessário, evoluir.
+
+---
+
+# 49. MVP — PRIMEIRA VERSÃO
+
+O primeiro Robolingo não precisa ter tudo.
+
+### MVP obrigatório
+
+✅ Login
+✅ Cadastro
+✅ Perfil aluno
+✅ Perfil professor
+✅ Código da turma
+✅ Mapa 2D
+✅ Avatar
+✅ Missões
+✅ 4 níveis
+✅ XP
+✅ Coins
+✅ Streak
+✅ Ranking
+✅ Conquistas
+✅ Inventário básico
+✅ Conteúdos do 6º ao 9º ano
+✅ Dashboard básico do professor
+
+---
+
+# 50. SEGUNDA FASE
+
+Adicionar:
+
+* NPCs;
+* diálogos;
+* loja;
+* pets;
+* Boss Battles;
+* mais regiões;
+* eventos;
+* desafios especiais;
+* sistema de habilidades.
+
+---
+
+# 51. TERCEIRA FASE
+
+Adicionar IA:
+
+* geração de missões;
+* geração de questões;
+* adaptação de dificuldade;
+* análise de erros;
+* recomendações;
+* criação de atividades pelo professor.
+
+---
+
+# 52. QUARTA FASE
+
+Recursos avançados:
+
+* Speaking;
+* reconhecimento de voz;
+* diálogos inteligentes;
+* multiplayer;
+* eventos entre turmas;
+* competições entre escolas;
+* temporadas.
+
+---
+
+# 53. TEMPORADAS
+
+O jogo poderá funcionar por temporadas.
+
+### SEASON 1
+
+**The Lost Words**
+
+### SEASON 2
+
+**Around the World**
+
+### SEASON 3
+
+**London Mystery**
+
+### SEASON 4
+
+**The Future**
+
+Cada temporada poderá adicionar:
+
+* mapa;
+* história;
+* personagens;
+* missões;
+* itens;
+* conquistas.
+
+---
+
+# 54. EVENTOS ESPECIAIS
+
+Exemplos:
+
+🎃 Halloween Quest
+
+🎄 Christmas Quest
+
+🌎 Earth Day Quest
+
+🇺🇸 American Culture Week
+
+🇬🇧 British Culture Week
+
+🎓 School Challenge
+
+Os eventos poderão ser temporários.
+
+---
+
+# 55. SISTEMA DE TEMPORADA ESCOLAR
+
+O professor poderá utilizar o Robolingo durante o ano letivo.
+
+### 1º BIMESTRE
+
+Village
+
+### 2º BIMESTRE
+
+Forest
+
+### 3º BIMESTRE
+
+City
+
+### 4º BIMESTRE
+
+Airport / Final Quest
+
+Isso permite relacionar o game ao planejamento pedagógico.
+
+---
+
+# 56. ACESSIBILIDADE
+
+O Robolingo deverá considerar:
+
+* textos legíveis;
+* contraste adequado;
+* navegação simples;
+* suporte por áudio;
+* possibilidade de repetir instruções;
+* ausência de limite rígido de tempo em atividades pedagógicas;
+* feedback visual e sonoro;
+* controles acessíveis;
+* linguagem clara.
+
+A acessibilidade deverá ser considerada desde a arquitetura inicial.
+
+---
+
+# 57. SEGURANÇA
+
+Como o público inclui estudantes menores de idade, segurança será requisito fundamental.
+
+O sistema deverá considerar:
+
+* autenticação segura;
+* proteção de dados;
+* permissões por tipo de usuário;
+* professor visualizando somente suas turmas;
+* regras de acesso ao Firestore;
+* proteção de informações pessoais;
+* minimização de dados coletados;
+* cuidado especial com recursos sociais;
+* ausência de comunicação pública irrestrita entre estudantes.
+
+---
+
+# 58. PRIVACIDADE
+
+O projeto deverá ser desenvolvido considerando a legislação aplicável, especialmente a **LGPD**, além das políticas das plataformas utilizadas.
+
+A coleta de dados deverá ser limitada ao necessário para:
+
+* autenticação;
+* funcionamento do jogo;
+* acompanhamento pedagógico;
+* progresso;
+* avaliação do sistema.
+
+---
+
+# 59. FILOSOFIA DE GAMIFICAÇÃO
+
+O Robolingo deverá utilizar recompensas para estimular:
+
+**participação → prática → progresso → domínio**
+
+e não simplesmente:
+
+**resposta correta → prêmio.**
+
+O objetivo final é desenvolver aprendizagem.
+
+---
+
+# 60. PRINCÍPIO DE DESIGN
+
+Toda mecânica deverá responder à pergunta:
+
+> **“Isso ajuda o aluno a aprender inglês ou apenas torna o jogo mais bonito?”**
+
+Se tornar o jogo mais divertido **e** favorecer a aprendizagem:
+
+✅ implementar.
+
+Se for apenas distração:
+
+⚠️ avaliar.
+
+---
+
+# 61. MÉTRICAS DE SUCESSO
+
+O projeto poderá acompanhar:
+
+### Engajamento
+
+* acessos;
+* frequência;
+* streak;
+* tempo de uso;
+* missões concluídas.
+
+### Aprendizagem
+
+* percentual de acertos;
+* evolução por habilidade;
+* erros recorrentes;
+* evolução de nível;
+* desempenho por conteúdo.
+
+### Percepção
+
+* satisfação dos alunos;
+* satisfação dos professores;
+* feedback;
+* pesquisas periódicas.
+
+---
+
+# 62. INDICADORES PEDAGÓGICOS
+
+Um dos objetivos da pesquisa poderá ser verificar:
+
+> O uso de elementos de gamificação no Robolingo contribui para aumentar a participação e a prática de Língua Inglesa?
+
+Também poderão ser analisados:
+
+* motivação;
+* frequência;
+* autonomia;
+* retenção de vocabulário;
+* compreensão;
+* desempenho;
+* percepção dos estudantes.
+
+---
+
+# 63. IDENTIDADE DO PROJETO
+
+## ROBOLINGO
+
+O nome une:
+
+**ROBO + LINGO**
+
+Transmitindo:
+
+🤖 Tecnologia
+🌎 Língua
+🎮 Jogo
+📚 Educação
+
+---
+
+# 64. SLOGANS POSSÍVEIS
+
+### Opção principal
+
+> **ROBOLINGO — Your English Adventure Starts Here.**
+
+Outras possibilidades:
+
+> **Learn English. Play the World.**
+
+> **Play. Learn. Explore.**
+
+> **Your world. Your English. Your adventure.**
+
+> **Aprenda. Explore. Evolua.**
+
+---
+
+# 65. VISÃO DE FUTURO
+
+O Robolingo deverá começar como um aplicativo de Língua Inglesa para estudantes do 6º ao 9º ano.
+
+Entretanto, sua arquitetura deverá permitir futuramente:
+
+* novos idiomas;
+* novas disciplinas;
+* novas escolas;
+* novos mundos;
+* novos professores;
+* novos conteúdos;
+* inteligência artificial;
+* aplicativos mobile.
+
+A estrutura poderá futuramente permitir transformar o Robolingo em uma plataforma educacional gamificada.
+
+---
+
+# 66. ROADMAP
+
+## 🚀 FASE 0 — PESQUISA
+
+✅ Pesquisa com estudantes
+✅ Google Forms
+✅ Levantamento de preferências
+✅ Definição da proposta
+
+↓
+
+## 🚀 FASE 1 — PROTÓTIPO
+
+🎨 Identidade visual
+🗺️ Mapa
+👤 Avatar
+📱 Telas
+🎮 Primeiras missões
+
+↓
+
+## 🚀 FASE 2 — MVP
+
+🔥 Login
+🔥 Firebase
+🔥 Turmas
+🔥 XP
+🔥 Coins
+🔥 Ranking
+🔥 Streak
+🔥 Missões
+
+↓
+
+## 🚀 FASE 3 — PEDAGOGIA
+
+📚 Conteúdos 6º–9º
+🎯 Progressão
+📊 Dashboard
+🧠 Skills
+
+↓
+
+## 🚀 FASE 4 — IA
+
+🤖 AI Quest Generator
+🤖 Adaptive Learning
+🤖 AI Assistant
+
+↓
+
+## 🚀 FASE 5 — EXPANSÃO
+
+🌎 Novos mundos
+🐉 Pets
+👹 Bosses
+🎧 Listening
+🗣️ Speaking
+🏆 Eventos
+
+---
+
+# 67. FRASE CENTRAL DO PROJETO
+
+> **“No Robolingo, aprender inglês não é o objetivo da aventura. É o que permite ao jogador avançar nela.”**
+
+---
+
+# 68. VISÃO FINAL
+
+O Robolingo deverá ser percebido pelo estudante como:
+
+🎮 **um jogo**
+
+pelo professor como:
+
+👨‍🏫 **uma ferramenta pedagógica**
+
+pela escola como:
+
+🏫 **uma plataforma educacional**
+
+e pelo pesquisador como:
+
+🔬 **um ambiente de investigação sobre gamificação, tecnologia, IA e aprendizagem de Língua Inglesa.**
+
+---
+
+# ROBOLINGO
+
+### **LEARN. PLAY. EXPLORE.**
+
+**Construído com os alunos. Desenvolvido para transformar o aprendizado de inglês em uma aventura.**
+Retire a parte de colocar firebase, vercel e github, mas restante pode manter. e não modifique o que já foi feito.

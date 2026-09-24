@@ -15,6 +15,7 @@ export default function MissionScreen() {
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [correct, setCorrect] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
 
   function submitAnswer() {
     if (selected === null) return;
@@ -151,6 +152,41 @@ export default function MissionScreen() {
               <Text style={[styles.resultProgressValue, { color: colors.primary }]}>{player.xp}/{player.xpNextLevel} XP</Text>
             </View>
             <ProgressBar progress={(player.xp / player.xpNextLevel) * 100} color={colors.primary} />
+          </View>
+          <View style={[styles.feedbackCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            {feedback ? (
+              <View style={styles.feedbackThanks}>
+                <Ionicons name="heart" size={18} color={colors.primary} />
+                <Text style={[styles.feedbackThanksText, { color: colors.foreground }]}>
+                  Obrigado! Seu feedback ajuda a melhorar as próximas missões.
+                </Text>
+              </View>
+            ) : (
+              <>
+                <Text style={[styles.feedbackTitle, { color: colors.foreground }]}>Como foi esta missão?</Text>
+                <View style={styles.feedbackOptions}>
+                  {[
+                    ['😄', 'Fácil'],
+                    ['🙂', 'Boa'],
+                    ['😐', 'Difícil'],
+                    ['😵', 'Muito difícil'],
+                  ].map(([emoji, label]) => (
+                    <Pressable
+                      key={label}
+                      onPress={() => setFeedback(label)}
+                      accessibilityRole="button"
+                      style={({ pressed }) => [
+                        styles.feedbackOption,
+                        { backgroundColor: colors.secondary, opacity: pressed ? 0.72 : 1 },
+                      ]}
+                    >
+                      <Text style={styles.feedbackEmoji}>{emoji}</Text>
+                      <Text style={[styles.feedbackLabel, { color: colors.secondaryForeground }]}>{label}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </>
+            )}
           </View>
           <PrimaryButton label="Voltar ao mapa" onPress={() => router.replace('/')} icon="map-outline" />
         </View>
@@ -345,4 +381,34 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     fontSize: 12,
   },
+  feedbackCard: {
+    width: '100%',
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 13,
+    marginBottom: 18,
+  },
+  feedbackTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 12,
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  feedbackOptions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 5,
+  },
+  feedbackOption: {
+    flex: 1,
+    alignItems: 'center',
+    borderRadius: 12,
+    paddingVertical: 8,
+    minHeight: 58,
+    justifyContent: 'center',
+  },
+  feedbackEmoji: { fontSize: 18 },
+  feedbackLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 9, marginTop: 4, textAlign: 'center' },
+  feedbackThanks: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 32 },
+  feedbackThanksText: { flex: 1, fontFamily: 'Inter_400Regular', fontSize: 11, lineHeight: 16 },
 });

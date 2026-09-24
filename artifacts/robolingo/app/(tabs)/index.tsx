@@ -57,6 +57,27 @@ export default function HomeScreen() {
       <SectionTitle title="Missão de hoje" action="Ver mapa" onAction={() => router.push('/learn')} />
       <MissionBanner mission={dailyMission} onPress={() => router.push('/mission')} />
 
+      <SectionTitle title="Seu mundo" action="Explorar" onAction={() => router.push('/adventure')} />
+      <Pressable
+        onPress={() => router.push('/adventure')}
+        accessibilityRole="button"
+        style={({ pressed }) => [
+          styles.adventureCard,
+          { backgroundColor: colors.heroStart, opacity: pressed ? 0.84 : 1 },
+        ]}
+      >
+        <View style={styles.adventureIcon}>
+          <Ionicons name="map-outline" size={24} color={colors.primaryForeground} />
+        </View>
+        <View style={styles.adventureCopy}>
+          <Text style={styles.adventureTitle}>Explore o mapa do Robolingo</Text>
+          <Text style={styles.adventureDescription}>
+            Desbloqueie regiões e recupere as palavras perdidas.
+          </Text>
+        </View>
+        <Ionicons name="arrow-forward-circle" size={24} color={colors.primaryForeground} />
+      </Pressable>
+
       <SectionTitle title="Seus interesses" action="Editar" onAction={() => router.push('/profile')} />
       <View style={styles.interestsGrid}>
         {player.selectedThemes.map((theme) => {
@@ -173,5 +194,30 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
     marginTop: 2,
+  },
+  adventureCard: {
+    minHeight: 84,
+    borderRadius: 21,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+  },
+  adventureIcon: {
+    width: 45,
+    height: 45,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  adventureCopy: { flex: 1 },
+  adventureTitle: { color: '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 13 },
+  adventureDescription: {
+    color: 'rgba(255,255,255,0.72)',
+    fontFamily: 'Inter_400Regular',
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 3,
   },
 });
