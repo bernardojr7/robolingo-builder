@@ -1,0 +1,1 @@
+- [Clerk Expo setup](clerk-expo-setup.md) — use a mature SDK-compatible Clerk release and keep publishable-key forwarding in dev/build paths.

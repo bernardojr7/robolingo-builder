@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 
 export type InterestId = 'games' | 'futebol' | 'moda' | 'musica' | 'anime';
+export type AccountRole = 'student' | 'teacher';
 
 export const INTERESTS: Array<{ id: InterestId; label: string; icon: string }> = [
   { id: 'games', label: 'Games', icon: 'game-controller-outline' },
@@ -13,6 +14,9 @@ export const INTERESTS: Array<{ id: InterestId; label: string; icon: string }> =
 
 type PlayerState = {
   name: string;
+  profileOwnerId: string | null;
+  profileRole: AccountRole | null;
+  teacherClassName: string;
   level: number;
   xp: number;
   xpNextLevel: number;
@@ -26,6 +30,9 @@ type PlayerState = {
 
 const DEFAULT_STATE: PlayerState = {
   name: 'Alex',
+  profileOwnerId: null,
+  profileRole: null,
+  teacherClassName: '',
   level: 5,
   xp: 420,
   xpNextLevel: 600,
@@ -40,6 +47,14 @@ const DEFAULT_STATE: PlayerState = {
 type AppContextValue = {
   player: PlayerState;
   hydrated: boolean;
+  profileReady: boolean;
+  ensureProfileOwner: (userId: string) => void;
+  setProfile: (profile: {
+    role: AccountRole;
+    name: string;
+    selectedThemes?: InterestId[];
+    teacherClassName?: string;
+  }) => void;
   toggleTheme: (theme: InterestId) => void;
   completeMission: (isCorrect: boolean) => void;
   buyItem: (itemId: string, price: number) => boolean;
@@ -74,6 +89,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
     () => ({
       player,
       hydrated,
+      profileReady: hydrated && player.profileOwnerId !== null,
+      ensureProfileOwner: (userId) => {
+        setPlayer((current) => {
+          if (current.profileOwnerId === userId) {
+            return current;
+          }
+          return {
+            ...DEFAULT_STATE,
+            profileOwnerId: userId,
+            name: current.name,
+            selectedThemes: current.selectedThemes,
+          };
+        });
+      },
+      setProfile: ({ role, name, selectedThemes, teacherClassName }) => {
+        setPlayer((current) => ({
+          ...current,
+          name: name.trim() || current.name,
+          profileRole: role,
+          selectedThemes: selectedThemes ?? current.selectedThemes,
+          teacherClassName: teacherClassName?.trim() ?? current.teacherClassName,
+        }));
+      },
       toggleTheme: (theme) => {
         setPlayer((current) => ({
           ...current,

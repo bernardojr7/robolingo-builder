@@ -1,4 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useClerk } from '@clerk/expo';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { RobotAvatar, Screen, SectionTitle, StatPill, TopBar } from '@/components/RobolingoUI';
@@ -7,14 +9,28 @@ import { useColors } from '@/hooks/useColors';
 
 export default function ProfileScreen() {
   const colors = useColors();
+  const router = useRouter();
+  const { signOut } = useClerk();
   const { player, toggleTheme } = useAppState();
+  const handleSignOut = async () => {
+    await signOut();
+    router.replace('/(auth)/welcome');
+  };
   return (
     <Screen>
-      <TopBar title="Seu perfil" subtitle="Sua evolução até aqui" />
+      <TopBar
+        title="Seu perfil"
+        subtitle="Sua evolução até aqui"
+        right={
+          <Pressable onPress={handleSignOut} accessibilityRole="button" accessibilityLabel="Sair da conta">
+            <Ionicons name="log-out-outline" size={23} color={colors.foreground} />
+          </Pressable>
+        }
+      />
       <View style={[styles.profileHero, { backgroundColor: colors.heroStart }]}>
         <RobotAvatar size={78} />
         <View style={styles.profileCopy}>
-          <Text style={styles.profileName}>{player.name} Silva</Text>
+           <Text style={styles.profileName}>{player.name}</Text>
           <Text style={styles.profileMeta}>Explorador do inglês · Nível {player.level}</Text>
         </View>
         <View style={[styles.levelBadge, { backgroundColor: colors.accent }]}>
