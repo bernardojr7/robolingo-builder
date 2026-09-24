@@ -354,8 +354,19 @@ export function getMissionById(id: string | undefined): DailyMission | undefined
   return getCurriculumMissions().find((mission) => mission.id === id);
 }
 
-export function getSkillProgress(completedMissions: number): Record<SkillId, number> {
-  const completed = getCurriculumMissions().slice(0, Math.min(completedMissions, getCurriculumMissions().length));
+export function getSkillProgress(
+  completedMissions: number,
+  curriculumYear?: CurriculumYearId,
+): Record<SkillId, number> {
+  const curriculumMissions = getCurriculumMissions();
+  const trackMissions = curriculumYear
+    ? curriculumMissions.filter((mission) => mission.year === curriculumYear)
+    : curriculumMissions;
+  const completedMissionIds = new Set(
+    curriculumMissions
+      .slice(0, Math.min(Math.max(completedMissions, 0), curriculumMissions.length))
+      .map((mission) => mission.id),
+  );
   const totals: Record<SkillId, number> = {
     grammar: 0,
     vocabulary: 0,
@@ -364,8 +375,10 @@ export function getSkillProgress(completedMissions: number): Record<SkillId, num
     speaking: 0,
   };
   const completedTotals = { ...totals };
-  getCurriculumMissions().forEach((mission) => mission.skills.forEach((skill) => (totals[skill] += 1)));
-  completed.forEach((mission) => mission.skills.forEach((skill) => (completedTotals[skill] += 1)));
+  trackMissions.forEach((mission) => mission.skills.forEach((skill) => (totals[skill] += 1)));
+  trackMissions
+    .filter((mission) => completedMissionIds.has(mission.id))
+    .forEach((mission) => mission.skills.forEach((skill) => (completedTotals[skill] += 1)));
   return Object.fromEntries(
     Object.keys(totals).map((skill) => [
       skill,
