@@ -31,6 +31,13 @@ export default function SignUpScreen() {
   const [message, setMessage] = useState('');
   const [verificationStarted, setVerificationStarted] = useState(false);
   const isLoading = fetchStatus === 'fetching';
+  const passwordRules = [
+    { label: 'Mínimo de 6 caracteres', valid: password.length >= 6 },
+    { label: 'Uma letra maiúscula', valid: /[A-ZÁÉÍÓÚÃÕÇ]/.test(password) },
+    { label: 'Um número', valid: /\d/.test(password) },
+    { label: 'Um caractere especial', valid: /[^A-Za-zÀ-ÿ0-9\s]/.test(password) },
+  ];
+  const passwordIsValid = passwordRules.every((rule) => rule.valid);
 
   const toggleTheme = (theme: InterestId) => {
     setThemes((current) =>
@@ -56,6 +63,10 @@ export default function SignUpScreen() {
 
   const handleSubmit = async () => {
     setMessage('');
+    if (!passwordIsValid) {
+      setMessage('A senha precisa ter 6 caracteres, uma maiúscula, um número e um caractere especial.');
+      return;
+    }
     saveProfileChoice();
     const result = await signUp.password({
       emailAddress: email.trim(),
@@ -155,14 +166,26 @@ export default function SignUpScreen() {
               label="Senha"
               value={password}
               onChangeText={setPassword}
-              placeholder="Crie uma senha segura"
+              placeholder="Mínimo de 6 caracteres"
               secureTextEntry
               textContentType="newPassword"
             />
+            <View style={styles.passwordRules}>
+              {passwordRules.map((rule) => (
+                <View key={rule.label} style={styles.passwordRule}>
+                  <Text style={[styles.passwordRuleIcon, { color: rule.valid ? colors.success : colors.mutedForeground }]}>
+                    {rule.valid ? '✓' : '○'}
+                  </Text>
+                  <Text style={[styles.passwordRuleText, { color: rule.valid ? colors.success : colors.mutedForeground }]}>
+                    {rule.label}
+                  </Text>
+                </View>
+              ))}
+            </View>
             <AuthButton
               label="Criar conta"
               onPress={handleSubmit}
-              disabled={!name || !email || !password || isLoading}
+              disabled={!name || !email || !passwordIsValid || isLoading}
               icon="arrow-forward"
             />
             <View style={styles.divider}>
@@ -189,6 +212,10 @@ export default function SignUpScreen() {
 const styles = StyleSheet.create({
   sectionLabel: { fontFamily: 'Inter_700Bold', fontSize: 13, marginTop: 5, marginBottom: 10 },
   formGap: { height: 8 },
+  passwordRules: { gap: 5, marginTop: -5, marginBottom: 7 },
+  passwordRule: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  passwordRuleIcon: { fontFamily: 'Inter_700Bold', fontSize: 13, width: 14 },
+  passwordRuleText: { fontFamily: 'Inter_400Regular', fontSize: 11 },
   divider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 16 },
   line: { flex: 1, height: 1 },
   dividerText: { fontFamily: 'Inter_600SemiBold', fontSize: 11 },
