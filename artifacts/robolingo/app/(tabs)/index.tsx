@@ -4,6 +4,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { MissionBanner, RobotAvatar, Screen, SectionTitle, StatPill, TopBar, ProgressBar } from '@/components/RobolingoUI';
 import { INTERESTS, useAppState } from '@/context/AppContext';
+import { getDailyMission } from '@/data/missions';
 import { useColors } from '@/hooks/useColors';
 
 export default function HomeScreen() {
@@ -11,6 +12,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { player } = useAppState();
   const progress = (player.xp / player.xpNextLevel) * 100;
+  const dailyMission = getDailyMission(player.selectedThemes, player.completedMissions);
 
   return (
     <Screen>
@@ -53,7 +55,7 @@ export default function HomeScreen() {
       </View>
 
       <SectionTitle title="Missão de hoje" action="Ver mapa" onAction={() => router.push('/learn')} />
-      <MissionBanner onPress={() => router.push('/mission')} />
+      <MissionBanner mission={dailyMission} onPress={() => router.push('/mission')} />
 
       <SectionTitle title="Seus interesses" action="Editar" onAction={() => router.push('/profile')} />
       <View style={styles.interestsGrid}>

@@ -4,42 +4,45 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ProgressBar, Screen, SectionTitle, TopBar } from '@/components/RobolingoUI';
 import { useAppState } from '@/context/AppContext';
+import { getDailyMission } from '@/data/missions';
 import { useColors } from '@/hooks/useColors';
-
-const missions = [
-  {
-    id: 'verb-to-be',
-    title: 'O verbo to be',
-    subtitle: 'Escolha a forma certa em cada frase',
-    icon: 'school-outline' as const,
-    xp: 85,
-    active: true,
-    accent: 'primary' as const,
-  },
-  {
-    id: 'daily-routine',
-    title: 'Daily routine',
-    subtitle: 'Fale sobre seu dia em inglês',
-    icon: 'sunny-outline' as const,
-    xp: 100,
-    active: false,
-    accent: 'accent' as const,
-  },
-  {
-    id: 'football-talk',
-    title: 'Football talk',
-    subtitle: 'Vocabulário para comentar a partida',
-    icon: 'football-outline' as const,
-    xp: 120,
-    active: false,
-    accent: 'purple' as const,
-  },
-];
 
 export default function LearnScreen() {
   const colors = useColors();
   const router = useRouter();
   const { player } = useAppState();
+  const dailyMission = getDailyMission(player.selectedThemes, player.completedMissions);
+  const journeyTotal = 12;
+  const journeyCompleted = Math.min(player.completedMissions, journeyTotal);
+  const missions = [
+    {
+      id: 'daily-mission',
+      title: dailyMission.title,
+      subtitle: dailyMission.description,
+      icon: dailyMission.icon as keyof typeof Ionicons.glyphMap,
+      xp: 85,
+      active: true,
+      accent: 'primary' as const,
+    },
+    {
+      id: 'smart-review',
+      title: 'Revisão inteligente',
+      subtitle: 'Reforce as palavras que você mais erra',
+      icon: 'refresh-outline' as const,
+      xp: 100,
+      active: false,
+      accent: 'accent' as const,
+    },
+    {
+      id: 'conversation-challenge',
+      title: 'Desafio de conversação',
+      subtitle: 'Pratique uma situação real em inglês',
+      icon: 'chatbubbles-outline' as const,
+      xp: 120,
+      active: false,
+      accent: 'purple' as const,
+    },
+  ];
   return (
     <Screen>
       <TopBar title="Mapa de missões" subtitle="Escolha seu próximo desafio" />
@@ -52,10 +55,12 @@ export default function LearnScreen() {
           </View>
           <View style={[styles.progressBadge, { backgroundColor: colors.secondary }]}>
             <Ionicons name="map-outline" size={17} color={colors.secondaryForeground} />
-            <Text style={[styles.progressBadgeText, { color: colors.secondaryForeground }]}>7/12</Text>
+            <Text style={[styles.progressBadgeText, { color: colors.secondaryForeground }]}>
+              {journeyCompleted}/{journeyTotal}
+            </Text>
           </View>
         </View>
-        <ProgressBar progress={58} color={colors.primary} />
+        <ProgressBar progress={(journeyCompleted / journeyTotal) * 100} color={colors.primary} />
         <Text style={[styles.progressCaption, { color: colors.mutedForeground }]}>
           Você já conquistou {player.completedMissions} missões.
         </Text>

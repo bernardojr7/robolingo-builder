@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import type { DailyMission } from '@/data/missions';
 import { useColors } from '@/hooks/useColors';
 
 const landscape = require('../assets/images/landscape.png');
@@ -246,7 +247,13 @@ export function PrimaryButton({
   );
 }
 
-export function MissionBanner({ onPress }: { onPress: () => void }) {
+export function MissionBanner({
+  onPress,
+  mission,
+}: {
+  onPress: () => void;
+  mission: DailyMission;
+}) {
   const colors = useColors();
   return (
     <Pressable
@@ -263,11 +270,13 @@ export function MissionBanner({ onPress }: { onPress: () => void }) {
         <View style={styles.missionBannerGlow} />
         <View style={styles.missionBannerCopy}>
           <View style={styles.missionEyebrow}>
-            <Ionicons name="flash" size={13} color={colors.accent} />
-            <Text style={[styles.eyebrowText, { color: colors.accent }]}>MISSÃO DIÁRIA</Text>
+            <Ionicons name={mission.icon as keyof typeof Ionicons.glyphMap} size={13} color={colors.accent} />
+            <Text style={[styles.eyebrowText, { color: colors.accent }]}>
+              MISSÃO DE {mission.skill.toUpperCase()}
+            </Text>
           </View>
-          <Text style={styles.missionTitle}>O desafio do verbo to be</Text>
-          <Text style={styles.missionDescription}>Complete a missão e conquiste 85 XP.</Text>
+          <Text style={styles.missionTitle}>{mission.title}</Text>
+          <Text style={styles.missionDescription}>{mission.description} +85 XP.</Text>
           <View style={styles.startRow}>
             <Text style={styles.startText}>Começar missão</Text>
             <Ionicons name="arrow-forward-circle" size={20} color={colors.primaryForeground} />

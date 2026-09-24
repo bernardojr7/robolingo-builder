@@ -4,21 +4,21 @@ import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { PrimaryButton, ProgressBar, RobotAvatar, Screen, TopBar } from '@/components/RobolingoUI';
 import { useAppState } from '@/context/AppContext';
+import { getDailyMission } from '@/data/missions';
 import { useColors } from '@/hooks/useColors';
-
-const options = ['is', 'are', 'am'];
 
 export default function MissionScreen() {
   const colors = useColors();
   const router = useRouter();
   const { completeMission, player } = useAppState();
+  const mission = getDailyMission(player.selectedThemes, player.completedMissions);
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [correct, setCorrect] = useState(false);
 
   function submitAnswer() {
     if (selected === null) return;
-    const answerIsCorrect = selected === 1;
+    const answerIsCorrect = selected === mission.correctIndex;
     setCorrect(answerIsCorrect);
     completeMission(answerIsCorrect);
     setStep(2);
@@ -28,7 +28,7 @@ export default function MissionScreen() {
     <Screen>
       <TopBar
         title="Missão diária"
-        subtitle="O verbo to be"
+        subtitle={mission.skill}
         right={
           <Pressable onPress={() => router.back()} accessibilityLabel="Fechar missão">
             <Ionicons name="close" size={25} color={colors.foreground} />
@@ -56,15 +56,15 @@ export default function MissionScreen() {
               <Ionicons name="chatbubble" size={12} color={colors.primaryForeground} />
             </View>
           </View>
-          <Text style={[styles.characterName, { color: colors.primary }]}>Teacher Emma</Text>
-          <Text style={[styles.dialogueTitle, { color: colors.foreground }]}>Olá, Alex!</Text>
+          <Text style={[styles.characterName, { color: colors.primary }]}>{mission.title}</Text>
+          <Text style={[styles.dialogueTitle, { color: colors.foreground }]}>Olá, {player.name}!</Text>
           <Text style={[styles.dialogueText, { color: colors.mutedForeground }]}>
-            Hoje vamos praticar o verbo to be. Preste atenção na pessoa da frase e escolha a forma correta.
+            {mission.intro}
           </Text>
           <View style={[styles.tipBox, { backgroundColor: colors.accent }]}>
             <Ionicons name="bulb-outline" size={20} color={colors.accentForeground} />
             <Text style={[styles.tipBoxText, { color: colors.accentForeground }]}>
-              Dica: “They” significa “eles” ou “elas”.
+              Dica: {mission.tip}
             </Text>
           </View>
           <PrimaryButton label="Estou pronto" onPress={() => setStep(1)} />
@@ -75,11 +75,11 @@ export default function MissionScreen() {
         <View>
           <View style={[styles.questionCard, { backgroundColor: colors.heroStart }]}>
             <Text style={styles.questionEyebrow}>ESCOLHA A RESPOSTA</Text>
-            <Text style={styles.questionText}>They ___ playing the game right now.</Text>
-            <Text style={styles.questionHint}>Complete a frase com a opção correta.</Text>
+            <Text style={styles.questionText}>{mission.question}</Text>
+            <Text style={styles.questionHint}>{mission.hint}</Text>
           </View>
           <View style={styles.optionsList}>
-            {options.map((option, index) => {
+            {mission.options.map((option, index) => {
               const isSelected = selected === index;
               return (
                 <Pressable
@@ -130,8 +130,8 @@ export default function MissionScreen() {
           </Text>
           <Text style={[styles.resultDescription, { color: colors.mutedForeground }]}>
             {correct
-              ? 'Muito bem. “They” combina com “are” porque estamos falando de mais de uma pessoa.'
-              : 'A resposta certa é “are”. Tente novamente na próxima missão e continue praticando.'}
+              ? mission.explanation
+              : `A resposta certa é “${mission.options[mission.correctIndex]}”. Tente novamente na próxima missão e continue praticando.`}
           </Text>
           <View style={styles.rewardsRow}>
             <View style={[styles.rewardCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
