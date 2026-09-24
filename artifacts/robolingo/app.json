@@ -12,7 +12,7 @@
     },
     "android": {},
     "splash": {
-      "backgroundColor": "#F4F8FC",
+      "backgroundColor": "#061A3B",
       "resizeMode": "contain",
       "image": "./assets/images/icon.png"
     },

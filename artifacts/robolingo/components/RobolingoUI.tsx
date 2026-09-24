@@ -2,6 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { ReactNode } from 'react';
 import {
+  Image,
+  ImageBackground,
   Platform,
   Pressable,
   ScrollView,
@@ -12,6 +14,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
+
+const landscape = require('../assets/images/landscape.png');
+const mascot = require('../assets/images/mascot.png');
 
 export function Screen({
   children,
@@ -30,7 +35,7 @@ export function Screen({
         {
           paddingTop,
           paddingBottom: insets.bottom + (Platform.OS === 'web' ? 34 : 96),
-          backgroundColor: colors.background,
+          backgroundColor: 'transparent',
         },
       ]}
     >
@@ -38,18 +43,23 @@ export function Screen({
     </View>
   );
 
-  if (!scroll) {
-    return <View style={{ flex: 1, backgroundColor: colors.background }}>{content}</View>;
-  }
-
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: colors.background }}
-      contentContainerStyle={{ flexGrow: 1 }}
-      showsVerticalScrollIndicator={false}
-    >
-      {content}
-    </ScrollView>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ImageBackground source={landscape} resizeMode="cover" style={styles.sceneLayer}>
+        <View style={[styles.sceneShade, { backgroundColor: colors.background }]} />
+      </ImageBackground>
+      {scroll ? (
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {content}
+        </ScrollView>
+      ) : (
+        content
+      )}
+    </View>
   );
 }
 
@@ -65,8 +75,8 @@ export function TopBar({
   const colors = useColors();
   return (
     <View style={styles.topBar}>
-      <View style={styles.brandMark}>
-        <Ionicons name="hardware-chip-outline" size={22} color={colors.primaryForeground} />
+      <View style={[styles.brandMark, { backgroundColor: colors.primary }]}>
+        <Image source={mascot} resizeMode="contain" style={styles.brandMascot} />
       </View>
       <View style={styles.topBarCopy}>
         <Text style={[styles.brandName, { color: colors.foreground }]}>
@@ -151,7 +161,7 @@ export function RobotAvatar({ size = 52 }: { size?: number }) {
         },
       ]}
     >
-      <Ionicons name="hardware-chip" size={size * 0.52} color={colors.accentForeground} />
+      <Image source={mascot} resizeMode="contain" style={{ width: size * 0.9, height: size * 0.9 }} />
     </View>
   );
 }
@@ -279,6 +289,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     minHeight: '100%',
   },
+  sceneLayer: {
+    ...StyleSheet.absoluteFill,
+    height: 270,
+  },
+  sceneShade: {
+    ...StyleSheet.absoluteFill,
+    opacity: 0.74,
+  },
   topBar: {
     minHeight: 54,
     flexDirection: 'row',
@@ -292,7 +310,11 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#2F80ED',
+    overflow: 'hidden',
+  },
+  brandMascot: {
+    width: 37,
+    height: 37,
   },
   topBarCopy: {
     flex: 1,
@@ -382,6 +404,8 @@ const styles = StyleSheet.create({
     padding: 20,
     overflow: 'hidden',
     flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.22)',
   },
   missionBannerGlow: {
     position: 'absolute',
