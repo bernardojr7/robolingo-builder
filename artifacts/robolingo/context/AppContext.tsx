@@ -1,7 +1,22 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 
-export type InterestId = 'games' | 'futebol' | 'moda' | 'musica' | 'anime';
+export type InterestId =
+  | 'games'
+  | 'futebol'
+  | 'moda'
+  | 'musica'
+  | 'anime'
+  | 'culinaria'
+  | 'leitura'
+  | 'matematica'
+  | 'ciencia'
+  | 'historia'
+  | 'geografia'
+  | 'hq'
+  | 'filme'
+  | 'serie'
+  | 'viagem';
 export type AccountRole = 'student' | 'teacher';
 
 export const INTERESTS: Array<{ id: InterestId; label: string; icon: string }> = [
@@ -10,6 +25,16 @@ export const INTERESTS: Array<{ id: InterestId; label: string; icon: string }> =
   { id: 'moda', label: 'Moda', icon: 'shirt-outline' },
   { id: 'musica', label: 'Música', icon: 'musical-notes-outline' },
   { id: 'anime', label: 'Anime', icon: 'sparkles-outline' },
+  { id: 'culinaria', label: 'Culinária', icon: 'restaurant-outline' },
+  { id: 'leitura', label: 'Leitura', icon: 'book-outline' },
+  { id: 'matematica', label: 'Matemática', icon: 'calculator-outline' },
+  { id: 'ciencia', label: 'Ciência', icon: 'flask-outline' },
+  { id: 'historia', label: 'História', icon: 'time-outline' },
+  { id: 'geografia', label: 'Geografia', icon: 'globe-outline' },
+  { id: 'hq', label: 'HQ', icon: 'chatbox-ellipses-outline' },
+  { id: 'filme', label: 'Filme', icon: 'film-outline' },
+  { id: 'serie', label: 'Série', icon: 'tv-outline' },
+  { id: 'viagem', label: 'Viagem', icon: 'airplane-outline' },
 ];
 
 type PlayerState = {
