@@ -1,4 +1,5 @@
-import { eq, asc } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
+import { randomBytes } from "node:crypto";
 import { Router, type IRouter } from "express";
 import { db, progressTable } from "@workspace/db";
 import {
@@ -17,6 +18,7 @@ function toResponse(row: typeof progressTable.$inferSelect) {
     name: row.name,
     role: row.role,
     teacherClassName: row.teacherClassName,
+    teacherClassCode: row.teacherClassCode,
     level: row.level,
     xp: row.xp,
     xpNextLevel: row.xpNextLevel,
@@ -27,6 +29,26 @@ function toResponse(row: typeof progressTable.$inferSelect) {
     selectedThemes: row.selectedThemes,
     ownedItems: row.ownedItems,
   });
+}
+
+function normalizeClassCode(value: string): string {
+  return value.trim().toUpperCase();
+}
+
+async function createUniqueClassCode(): Promise<string> {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const code = `ROB-${randomBytes(3).toString("hex").toUpperCase()}`;
+    const [existing] = await db
+      .select({ userId: progressTable.userId })
+      .from(progressTable)
+      .where(eq(progressTable.teacherClassCode, code));
+
+    if (!existing) {
+      return code;
+    }
+  }
+
+  throw new Error("Unable to create a unique class code");
 }
 
 router.get("/progress/me", requireAuth, async (req, res): Promise<void> => {
@@ -51,7 +73,10 @@ router.put("/progress/me", requireAuth, async (req, res): Promise<void> => {
   }
 
   const existing = await db
-    .select({ role: progressTable.role })
+    .select({
+      role: progressTable.role,
+      teacherClassCode: progressTable.teacherClassCode,
+    })
     .from(progressTable)
     .where(eq(progressTable.userId, req.auth!.userId));
   const role = parsed.data.role;
@@ -61,16 +86,45 @@ router.put("/progress/me", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
+  let teacherClassCode = normalizeClassCode(parsed.data.teacherClassCode);
+  if (role === "teacher") {
+    if (existing[0]?.teacherClassCode) {
+      if (teacherClassCode && existing[0].teacherClassCode !== teacherClassCode) {
+        res.status(400).json({ error: "Teacher class code cannot be changed" });
+        return;
+      }
+      teacherClassCode = existing[0].teacherClassCode;
+    } else {
+      teacherClassCode = await createUniqueClassCode();
+    }
+  } else {
+    if (!teacherClassCode) {
+      res.status(400).json({ error: "A class code is required for students" });
+      return;
+    }
+
+    const [teacher] = await db
+      .select({ userId: progressTable.userId })
+      .from(progressTable)
+      .where(and(eq(progressTable.role, "teacher"), eq(progressTable.teacherClassCode, teacherClassCode)));
+
+    if (!teacher) {
+      res.status(400).json({ error: "Invalid class code" });
+      return;
+    }
+  }
+
   const [row] = await db
     .insert(progressTable)
     .values({
       userId: req.auth!.userId,
       ...parsed.data,
+      teacherClassCode,
       updatedAt: new Date(),
     })
     .onConflictDoUpdate({
       target: progressTable.userId,
-      set: { ...parsed.data, updatedAt: new Date() },
+      set: { ...parsed.data, teacherClassCode, updatedAt: new Date() },
     })
     .returning();
 
@@ -79,7 +133,10 @@ router.put("/progress/me", requireAuth, async (req, res): Promise<void> => {
 
 router.get("/progress/students", requireAuth, async (req, res): Promise<void> => {
   const [teacher] = await db
-    .select({ role: progressTable.role })
+    .select({
+      role: progressTable.role,
+      teacherClassCode: progressTable.teacherClassCode,
+    })
     .from(progressTable)
     .where(eq(progressTable.userId, req.auth!.userId));
 
@@ -88,10 +145,15 @@ router.get("/progress/students", requireAuth, async (req, res): Promise<void> =>
     return;
   }
 
+  if (!teacher.teacherClassCode) {
+    res.json(ListStudentProgressResponse.parse([]));
+    return;
+  }
+
   const students = await db
     .select()
     .from(progressTable)
-    .where(eq(progressTable.role, "student"))
+    .where(and(eq(progressTable.role, "student"), eq(progressTable.teacherClassCode, teacher.teacherClassCode)))
     .orderBy(asc(progressTable.name));
 
   res.json(ListStudentProgressResponse.parse(students.map(toResponse)));

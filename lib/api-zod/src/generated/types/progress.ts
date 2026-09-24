@@ -13,6 +13,7 @@ export interface Progress {
   name: string;
   role: AccountRole;
   teacherClassName: string;
+  teacherClassCode: string;
   level: number;
   xp: number;
   xpNextLevel: number;

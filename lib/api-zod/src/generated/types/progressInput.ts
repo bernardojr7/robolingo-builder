@@ -13,6 +13,7 @@ export interface ProgressInput {
   name: string;
   role: AccountRole;
   teacherClassName: string;
+  teacherClassCode: string;
   /** @minimum 1 */
   level: number;
   /** @minimum 0 */

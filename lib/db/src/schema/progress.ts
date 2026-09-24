@@ -1,5 +1,5 @@
 import { createInsertSchema } from "drizzle-zod";
-import { integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { index, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
 
 export const progressTable = pgTable("progress", {
@@ -7,6 +7,7 @@ export const progressTable = pgTable("progress", {
   name: text("name").notNull(),
   role: text("role").notNull(),
   teacherClassName: text("teacher_class_name").notNull().default(""),
+  teacherClassCode: text("teacher_class_code").notNull().default(""),
   level: integer("level").notNull(),
   xp: integer("xp").notNull(),
   xpNextLevel: integer("xp_next_level").notNull(),
@@ -17,7 +18,9 @@ export const progressTable = pgTable("progress", {
   selectedThemes: text("selected_themes").array().notNull(),
   ownedItems: text("owned_items").array().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => ({
+  teacherClassCodeIdx: index("progress_teacher_class_code_idx").on(table.teacherClassCode),
+}));
 
 export const insertProgressSchema = createInsertSchema(progressTable).omit({
   updatedAt: true,

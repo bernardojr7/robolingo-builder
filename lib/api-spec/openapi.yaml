@@ -60,7 +60,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Progress"
         "400":
-          description: Invalid progress
+          description: Invalid progress or class code
         "401":
           description: Authentication required
   /progress/students:
@@ -122,6 +122,8 @@ components:
           $ref: "#/components/schemas/AccountRole"
         teacherClassName:
           type: string
+        teacherClassCode:
+          type: string
         level:
           type: integer
         xp:
@@ -149,6 +151,7 @@ components:
         - name
         - role
         - teacherClassName
+        - teacherClassCode
         - level
         - xp
         - xpNextLevel
@@ -167,6 +170,8 @@ components:
         role:
           $ref: "#/components/schemas/AccountRole"
         teacherClassName:
+          type: string
+        teacherClassCode:
           type: string
         level:
           type: integer
@@ -201,6 +206,7 @@ components:
         - name
         - role
         - teacherClassName
+        - teacherClassCode
         - level
         - xp
         - xpNextLevel

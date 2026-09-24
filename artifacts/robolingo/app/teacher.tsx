@@ -78,7 +78,7 @@ export default function TeacherScreen() {
             {player.teacherClassName || 'Minha primeira turma'}
           </Text>
           <Text style={[styles.classMeta, { color: colors.mutedForeground }]}>
-            Código de entrada · ROB-2026
+            Código de entrada · {player.teacherClassCode || 'gerando...'}
           </Text>
         </View>
         <Ionicons name="chevron-forward" size={19} color={colors.mutedForeground} />

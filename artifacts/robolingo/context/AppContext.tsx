@@ -50,6 +50,7 @@ type PlayerState = {
   profileOwnerId: string | null;
   profileRole: AccountRole | null;
   teacherClassName: string;
+  teacherClassCode: string;
   level: number;
   xp: number;
   xpNextLevel: number;
@@ -69,6 +70,7 @@ const DEFAULT_STATE: PlayerState = {
   profileOwnerId: null,
   profileRole: null,
   teacherClassName: '',
+  teacherClassCode: '',
   level: 5,
   xp: 420,
   xpNextLevel: 600,
@@ -92,6 +94,7 @@ type AppContextValue = {
     name: string;
     selectedThemes?: InterestId[];
     teacherClassName?: string;
+    teacherClassCode?: string;
   }) => void;
   toggleTheme: (theme: InterestId) => void;
   setCurriculumYear: (year: CurriculumYearId) => void;
@@ -158,6 +161,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         name: progressQuery.data.name,
         profileRole: progressQuery.data.role,
         teacherClassName: progressQuery.data.teacherClassName,
+        teacherClassCode: progressQuery.data.teacherClassCode,
         level: progressQuery.data.level,
         xp: progressQuery.data.xp,
         xpNextLevel: progressQuery.data.xpNextLevel,
@@ -183,6 +187,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       name: player.name,
       role: player.profileRole,
       teacherClassName: player.teacherClassName,
+      teacherClassCode: player.teacherClassCode,
       level: player.level,
       xp: player.xp,
       xpNextLevel: player.xpNextLevel,
@@ -200,8 +205,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     mutateProgress(
       { data: payload },
       {
-        onSuccess: () => {
-          setLastSyncedPayload(serializedPayload);
+        onSuccess: (savedProgress) => {
+          setPlayer((current) => ({
+            ...current,
+            teacherClassCode: savedProgress.teacherClassCode,
+          }));
+          setLastSyncedPayload(
+            JSON.stringify({
+              ...payload,
+              teacherClassCode: savedProgress.teacherClassCode,
+            }),
+          );
           setSyncStatus('synced');
         },
         onError: () => {
@@ -241,13 +255,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
           };
         });
       },
-      setProfile: ({ role, name, selectedThemes, teacherClassName }) => {
+      setProfile: ({ role, name, selectedThemes, teacherClassName, teacherClassCode }) => {
         setPlayer((current) => ({
           ...current,
           name: name.trim() || current.name,
           profileRole: role,
           selectedThemes: selectedThemes ?? current.selectedThemes,
           teacherClassName: teacherClassName?.trim() ?? current.teacherClassName,
+          teacherClassCode: teacherClassCode?.trim().toUpperCase() ?? current.teacherClassCode,
         }));
       },
       toggleTheme: (theme) => {
