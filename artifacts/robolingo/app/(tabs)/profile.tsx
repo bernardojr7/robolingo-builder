@@ -5,6 +5,8 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { RobotAvatar, Screen, SectionTitle, StatPill, TopBar } from '@/components/RobolingoUI';
 import { INTERESTS, useAppState } from '@/context/AppContext';
+import { CURRICULUM_TRACKS, SKILLS } from '@/data/gameDesign';
+import { getSkillProgress } from '@/data/missions';
 import { useColors } from '@/hooks/useColors';
 
 export default function ProfileScreen() {
@@ -12,6 +14,8 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { signOut } = useClerk();
   const { player, toggleTheme } = useAppState();
+  const skillProgress = getSkillProgress(player.completedMissions);
+  const track = CURRICULUM_TRACKS.find((item) => item.id === player.curriculumYear) ?? CURRICULUM_TRACKS[0];
   const handleSignOut = async () => {
     await signOut();
     router.replace('/(auth)/welcome');
@@ -42,6 +46,30 @@ export default function ProfileScreen() {
         <StatPill icon="trophy-outline" value={player.completedMissions} label="missões" />
         <StatPill icon="flame" value={player.streakDays} label="streak" tone="accent" />
         <StatPill icon="star-outline" value={player.xp} label="XP" tone="purple" />
+      </View>
+
+      <SectionTitle title="Evolução por habilidade" />
+      <View style={styles.skillGrid}>
+        {SKILLS.map((skill) => (
+          <View key={skill.id} style={[styles.skillCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.skillHeading}>
+              <Ionicons name={skill.icon as keyof typeof Ionicons.glyphMap} size={17} color={colors.primary} />
+              <Text style={[styles.skillLabel, { color: colors.foreground }]}>{skill.label}</Text>
+            </View>
+            <Text style={[styles.skillPercent, { color: colors.primary }]}>{skillProgress[skill.id]}%</Text>
+            <View style={[styles.skillTrack, { backgroundColor: colors.muted }]}>
+              <View style={[styles.skillFill, { backgroundColor: colors.primary, width: `${skillProgress[skill.id]}%` }]} />
+            </View>
+          </View>
+        ))}
+      </View>
+
+      <View style={[styles.trackCard, { backgroundColor: colors.secondary, borderColor: colors.border }]}>
+        <Ionicons name="school-outline" size={21} color={colors.primary} />
+        <View style={styles.trackCopy}>
+          <Text style={[styles.trackTitle, { color: colors.foreground }]}>Trilha curricular · {track.label}</Text>
+          <Text style={[styles.trackSubtitle, { color: colors.secondaryForeground }]}>{track.subtitle}</Text>
+        </View>
       </View>
 
       <SectionTitle title="Seus interesses" />
@@ -138,6 +166,17 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 14,
   },
+  skillGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  skillCard: { width: '48%', minHeight: 92, borderRadius: 16, borderWidth: 1, padding: 12 },
+  skillHeading: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  skillLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 11, flex: 1 },
+  skillPercent: { fontFamily: 'Inter_700Bold', fontSize: 17, marginTop: 9, marginBottom: 7 },
+  skillTrack: { height: 5, borderRadius: 3, overflow: 'hidden' },
+  skillFill: { height: '100%', borderRadius: 3 },
+  trackCard: { minHeight: 62, borderRadius: 18, borderWidth: 1, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 18, marginBottom: 2 },
+  trackCopy: { flex: 1 },
+  trackTitle: { fontFamily: 'Inter_700Bold', fontSize: 12 },
+  trackSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 10, lineHeight: 15, marginTop: 3 },
   helperText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,

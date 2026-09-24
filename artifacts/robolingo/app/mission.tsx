@@ -1,17 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { PrimaryButton, ProgressBar, RobotAvatar, Screen, TopBar } from '@/components/RobolingoUI';
 import { useAppState } from '@/context/AppContext';
-import { getDailyMission } from '@/data/missions';
+import { ENGLISH_LEVELS } from '@/data/gameDesign';
+import { getDailyMission, getMissionById } from '@/data/missions';
 import { useColors } from '@/hooks/useColors';
 
 export default function MissionScreen() {
   const colors = useColors();
   const router = useRouter();
   const { completeMission, player } = useAppState();
-  const mission = getDailyMission(player.selectedThemes, player.completedMissions);
+  const { missionId } = useLocalSearchParams<{ missionId?: string }>();
+  const selectedMissionId = Array.isArray(missionId) ? missionId[0] : missionId;
+  const mission = getMissionById(selectedMissionId) ?? getDailyMission(player.selectedThemes, player.completedMissions);
+  const difficulty = ENGLISH_LEVELS.find((level) => level.id === mission.difficulty);
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [correct, setCorrect] = useState(false);
@@ -29,7 +33,7 @@ export default function MissionScreen() {
     <Screen>
       <TopBar
         title="Missão diária"
-        subtitle={mission.skill}
+        subtitle={`${mission.skill} · ${mission.year}º ano`}
         right={
           <Pressable onPress={() => router.back()} accessibilityLabel="Fechar missão">
             <Ionicons name="close" size={25} color={colors.foreground} />
@@ -62,6 +66,19 @@ export default function MissionScreen() {
           <Text style={[styles.dialogueText, { color: colors.mutedForeground }]}>
             {mission.intro}
           </Text>
+          <View style={[styles.curriculumCard, { backgroundColor: colors.secondary, borderColor: colors.border }]}>
+            <View style={styles.curriculumHeader}>
+              <View style={styles.curriculumPill}>
+                <Ionicons name="school-outline" size={14} color={colors.primary} />
+                <Text style={[styles.curriculumPillText, { color: colors.primary }]}>{mission.year}º ano</Text>
+              </View>
+              <Text style={[styles.curriculumDifficulty, { color: colors.accent }]}>{difficulty?.name}</Text>
+            </View>
+            <Text style={[styles.curriculumUnit, { color: colors.foreground }]}>{mission.unit}</Text>
+            <Text style={[styles.curriculumTopic, { color: colors.secondaryForeground }]}>
+              {mission.topic} · {mission.skills.join(' · ')}
+            </Text>
+          </View>
           <View style={[styles.tipBox, { backgroundColor: colors.accent }]}>
             <Ionicons name="bulb-outline" size={20} color={colors.accentForeground} />
             <Text style={[styles.tipBoxText, { color: colors.accentForeground }]}>
@@ -247,6 +264,13 @@ const styles = StyleSheet.create({
     marginTop: 9,
     maxWidth: 330,
   },
+  curriculumCard: { width: '100%', borderWidth: 1, borderRadius: 17, padding: 13, marginTop: 17, marginBottom: 3 },
+  curriculumHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  curriculumPill: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  curriculumPillText: { fontFamily: 'Inter_700Bold', fontSize: 11 },
+  curriculumDifficulty: { fontFamily: 'Inter_700Bold', fontSize: 10, textTransform: 'uppercase' },
+  curriculumUnit: { fontFamily: 'Inter_700Bold', fontSize: 12, marginTop: 9 },
+  curriculumTopic: { fontFamily: 'Inter_400Regular', fontSize: 10, lineHeight: 15, marginTop: 4 },
   tipBox: {
     width: '100%',
     flexDirection: 'row',

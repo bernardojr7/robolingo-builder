@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   PrimaryButton,
   ProgressBar,
@@ -12,15 +12,22 @@ import {
   TopBar,
 } from '@/components/RobolingoUI';
 import { useAppState } from '@/context/AppContext';
-import { ACHIEVEMENTS, getEnglishLevel, REGIONS, SKILLS } from '@/data/gameDesign';
+import { ACHIEVEMENTS, ENGLISH_LEVEL_REQUIREMENTS, ENGLISH_LEVELS, getEnglishLevel, REGIONS, SKILLS, type RegionId } from '@/data/gameDesign';
+import { getCurriculumMissions, getSkillProgress } from '@/data/missions';
 import { useColors } from '@/hooks/useColors';
 
 export default function AdventureScreen() {
   const colors = useColors();
   const router = useRouter();
   const { player } = useAppState();
+  const [regionFilter, setRegionFilter] = useState<RegionId | 'all'>('all');
   const englishLevel = getEnglishLevel(player.level);
-  const journeyProgress = Math.min(100, (player.completedMissions / 12) * 100);
+  const curriculumMissions = getCurriculumMissions();
+  const skillProgress = getSkillProgress(player.completedMissions);
+  const filteredMissions = useMemo(
+    () => curriculumMissions.filter((mission) => regionFilter === 'all' || mission.region === regionFilter),
+    [curriculumMissions, regionFilter],
+  );
 
   return (
     <Screen>
@@ -65,10 +72,35 @@ export default function AdventureScreen() {
           </View>
         </View>
         <Text style={[styles.levelSubtitle, { color: colors.mutedForeground }]}>{englishLevel.subtitle}</Text>
-        <ProgressBar progress={(player.level / 10) * 100} color={colors.primary} />
+        <ProgressBar progress={(player.xp / player.xpNextLevel) * 100} color={colors.primary} />
       </View>
 
       <SectionTitle title="Mapa da aventura" />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterList}>
+        <Pressable
+          onPress={() => setRegionFilter('all')}
+          accessibilityRole="button"
+          accessibilityState={{ selected: regionFilter === 'all' }}
+          style={[styles.filterChip, { backgroundColor: regionFilter === 'all' ? colors.primary : colors.card, borderColor: regionFilter === 'all' ? colors.primary : colors.border }]}
+        >
+          <Text style={[styles.filterChipText, { color: regionFilter === 'all' ? colors.primaryForeground : colors.mutedForeground }]}>Todas</Text>
+        </Pressable>
+        {REGIONS.map((region) => (
+          <Pressable
+            key={region.id}
+            onPress={() => setRegionFilter(region.id)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: regionFilter === region.id }}
+            style={[
+              styles.filterChip,
+              { backgroundColor: regionFilter === region.id ? colors.primary : colors.card, borderColor: regionFilter === region.id ? colors.primary : colors.border },
+            ]}
+          >
+            <Ionicons name={region.icon as keyof typeof Ionicons.glyphMap} size={14} color={regionFilter === region.id ? colors.primaryForeground : colors.mutedForeground} />
+            <Text style={[styles.filterChipText, { color: regionFilter === region.id ? colors.primaryForeground : colors.mutedForeground }]}>{region.name}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
       <View style={styles.regionList}>
         {REGIONS.map((region, index) => {
           const unlocked =
@@ -82,7 +114,7 @@ export default function AdventureScreen() {
               ) : null}
               <Pressable
                 disabled={!unlocked}
-                onPress={() => router.push('/mission')}
+                onPress={() => setRegionFilter(region.id)}
                 accessibilityRole={unlocked ? 'button' : undefined}
                 style={({ pressed }) => [
                   styles.regionCard,
@@ -128,10 +160,73 @@ export default function AdventureScreen() {
         })}
       </View>
 
+      <View style={styles.missionSectionHeader}>
+        <View>
+          <Text style={[styles.missionSectionTitle, { color: colors.foreground }]}>Missões curriculares</Text>
+          <Text style={[styles.missionSectionSubtitle, { color: colors.mutedForeground }]}>
+            {regionFilter === 'all' ? 'Sua progressão do 6º ao 9º ano' : 'Missões desta região'}
+          </Text>
+        </View>
+        <Text style={[styles.missionCount, { color: colors.primary }]}>{player.completedMissions}/{curriculumMissions.length}</Text>
+      </View>
+      <View style={styles.curriculumMissionList}>
+        {filteredMissions.map((mission) => {
+          const missionIndex = curriculumMissions.findIndex((item) => item.id === mission.id);
+          const completed = missionIndex < player.completedMissions;
+          const available = missionIndex <= player.completedMissions && player.level >= ENGLISH_LEVEL_REQUIREMENTS[mission.difficulty];
+          const level = ENGLISH_LEVELS.find((item) => item.id === mission.difficulty);
+          return (
+            <Pressable
+              key={mission.id}
+              disabled={!available}
+              onPress={() => router.push({ pathname: '/mission', params: { missionId: mission.id } })}
+              accessibilityRole={available ? 'button' : undefined}
+              accessibilityLabel={`${mission.title}, ${mission.year}º ano, ${mission.unit}`}
+              style={({ pressed }) => [
+                styles.curriculumMissionCard,
+                {
+                  backgroundColor: available ? colors.card : colors.muted,
+                  borderColor: completed ? colors.success : available ? colors.border : colors.muted,
+                  opacity: pressed ? 0.76 : available ? 1 : 0.7,
+                },
+              ]}
+            >
+              <View style={[styles.missionStatus, { backgroundColor: completed ? colors.success : available ? colors.primary : colors.muted }]}>
+                <Ionicons
+                  name={completed ? 'checkmark' : available ? 'play' : 'lock-closed'}
+                  size={14}
+                  color={completed || available ? colors.primaryForeground : colors.mutedForeground}
+                />
+              </View>
+              <View style={styles.curriculumMissionCopy}>
+                <View style={styles.curriculumMissionTitleRow}>
+                  <Text style={[styles.curriculumMissionTitle, { color: colors.foreground }]}>{mission.title}</Text>
+                  <Text style={[styles.difficultyLabel, { color: colors.primary }]}>{level?.name}</Text>
+                </View>
+                <Text style={[styles.curriculumMissionMeta, { color: colors.mutedForeground }]}>
+                  {mission.year}º ano · {mission.unit}
+                </Text>
+                <Text style={[styles.curriculumMissionTopic, { color: colors.mutedForeground }]}>
+                  {mission.topic} · {mission.skills.map((skill) => SKILLS.find((item) => item.id === skill)?.label).join(' · ')}
+                </Text>
+                {!available && !completed ? (
+                  <Text style={[styles.curriculumMissionLock, { color: colors.mutedForeground }]}>
+                    {player.level < ENGLISH_LEVEL_REQUIREMENTS[mission.difficulty]
+                      ? `Alcance o nível ${ENGLISH_LEVEL_REQUIREMENTS[mission.difficulty]}`
+                      : `Complete a missão ${missionIndex}`}
+                  </Text>
+                ) : null}
+              </View>
+              {available ? <Ionicons name="chevron-forward" size={17} color={colors.mutedForeground} /> : null}
+            </Pressable>
+          );
+        })}
+      </View>
+
       <SectionTitle title="Habilidades" />
       <View style={styles.skillGrid}>
-        {SKILLS.map((skill, index) => {
-          const progress = Math.min(92, 46 + player.completedMissions * 2 + index * 5);
+        {SKILLS.map((skill) => {
+          const progress = skillProgress[skill.id];
           return (
             <View key={skill.id} style={[styles.skillCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.skillHeading}>
@@ -213,6 +308,23 @@ const styles = StyleSheet.create({
   currentLabel: { fontFamily: 'Inter_700Bold', fontSize: 9, letterSpacing: 0.8 },
   regionSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 3 },
   regionRequirement: { fontFamily: 'Inter_600SemiBold', fontSize: 10, marginTop: 4 },
+  filterList: { gap: 8, paddingBottom: 12 },
+  filterChip: { minHeight: 34, paddingHorizontal: 11, borderWidth: 1, borderRadius: 17, flexDirection: 'row', alignItems: 'center', gap: 5 },
+  filterChipText: { fontFamily: 'Inter_600SemiBold', fontSize: 11 },
+  missionSectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 19, marginBottom: 10 },
+  missionSectionTitle: { fontFamily: 'Inter_700Bold', fontSize: 17 },
+  missionSectionSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 3 },
+  missionCount: { fontFamily: 'Inter_700Bold', fontSize: 12 },
+  curriculumMissionList: { gap: 9 },
+  curriculumMissionCard: { minHeight: 86, borderWidth: 1, borderRadius: 18, padding: 11, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  missionStatus: { width: 29, height: 29, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  curriculumMissionCopy: { flex: 1 },
+  curriculumMissionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  curriculumMissionTitle: { fontFamily: 'Inter_700Bold', fontSize: 12, flex: 1 },
+  difficultyLabel: { fontFamily: 'Inter_700Bold', fontSize: 9, textTransform: 'uppercase' },
+  curriculumMissionMeta: { fontFamily: 'Inter_600SemiBold', fontSize: 10, marginTop: 4 },
+  curriculumMissionTopic: { fontFamily: 'Inter_400Regular', fontSize: 10, lineHeight: 14, marginTop: 3 },
+  curriculumMissionLock: { fontFamily: 'Inter_600SemiBold', fontSize: 9, marginTop: 4 },
   skillGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   skillCard: { width: '48%', borderWidth: 1, borderRadius: 16, padding: 12 },
   skillHeading: { flexDirection: 'row', alignItems: 'center', gap: 6 },

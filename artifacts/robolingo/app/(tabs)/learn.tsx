@@ -4,45 +4,19 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ProgressBar, Screen, SectionTitle, TopBar } from '@/components/RobolingoUI';
 import { useAppState } from '@/context/AppContext';
-import { getDailyMission } from '@/data/missions';
+import { CURRICULUM_TRACKS, SKILLS } from '@/data/gameDesign';
+import { getCurriculumMissions } from '@/data/missions';
 import { useColors } from '@/hooks/useColors';
 
 export default function LearnScreen() {
   const colors = useColors();
   const router = useRouter();
   const { player } = useAppState();
-  const dailyMission = getDailyMission(player.selectedThemes, player.completedMissions);
-  const journeyTotal = 12;
-  const journeyCompleted = Math.min(player.completedMissions, journeyTotal);
-  const missions = [
-    {
-      id: 'daily-mission',
-      title: dailyMission.title,
-      subtitle: dailyMission.description,
-      icon: dailyMission.icon as keyof typeof Ionicons.glyphMap,
-      xp: 85,
-      active: true,
-      accent: 'primary' as const,
-    },
-    {
-      id: 'smart-review',
-      title: 'Revisão inteligente',
-      subtitle: 'Reforce as palavras que você mais erra',
-      icon: 'refresh-outline' as const,
-      xp: 100,
-      active: false,
-      accent: 'accent' as const,
-    },
-    {
-      id: 'conversation-challenge',
-      title: 'Desafio de conversação',
-      subtitle: 'Pratique uma situação real em inglês',
-      icon: 'chatbubbles-outline' as const,
-      xp: 120,
-      active: false,
-      accent: 'purple' as const,
-    },
-  ];
+  const track = CURRICULUM_TRACKS.find((item) => item.id === player.curriculumYear) ?? CURRICULUM_TRACKS[0];
+  const curriculumMissions = getCurriculumMissions();
+  const missions = curriculumMissions.filter((mission) => mission.year === player.curriculumYear);
+  const journeyTotal = missions.length;
+  const journeyCompleted = missions.filter((mission) => curriculumMissions.findIndex((item) => item.id === mission.id) < player.completedMissions).length;
   return (
     <Screen>
       <TopBar title="Mapa de missões" subtitle="Escolha seu próximo desafio" />
@@ -51,7 +25,7 @@ export default function LearnScreen() {
         <View style={styles.progressHeader}>
           <View>
             <Text style={[styles.progressEyebrow, { color: colors.mutedForeground }]}>JORNADA ATUAL</Text>
-            <Text style={[styles.progressTitle, { color: colors.foreground }]}>Primeiros passos</Text>
+            <Text style={[styles.progressTitle, { color: colors.foreground }]}>Trilha do {track.label}</Text>
           </View>
           <View style={[styles.progressBadge, { backgroundColor: colors.secondary }]}>
             <Ionicons name="map-outline" size={17} color={colors.secondaryForeground} />
@@ -66,50 +40,49 @@ export default function LearnScreen() {
         </Text>
       </View>
 
+      <Text style={[styles.trackDescription, { color: colors.mutedForeground }]}>{track.subtitle}</Text>
       <SectionTitle title="Trilha principal" />
       <View style={styles.missionList}>
         {missions.map((mission, index) => {
-          const iconColor =
-            mission.accent === 'accent'
-              ? colors.accentForeground
-              : mission.accent === 'purple'
-                ? colors.purple
-                : colors.primary;
-          const iconBackground =
-            mission.accent === 'accent'
-              ? colors.accent
-              : mission.accent === 'purple'
-                ? `${colors.purple}22`
-                : colors.secondary;
+          const missionIndex = curriculumMissions.findIndex((item) => item.id === mission.id);
+          const active = missionIndex <= player.completedMissions;
+          const completed = missionIndex < player.completedMissions;
           return (
             <Pressable
               key={mission.id}
-              disabled={!mission.active}
-              onPress={() => router.push('/mission')}
-              accessibilityRole={mission.active ? 'button' : undefined}
+              disabled={!active}
+              onPress={() => router.push({ pathname: '/mission', params: { missionId: mission.id } })}
+              accessibilityRole={active ? 'button' : undefined}
               style={({ pressed }) => [
                 styles.missionRow,
-                { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.75 : 1 },
+                { backgroundColor: colors.card, borderColor: completed ? colors.success : colors.border, opacity: pressed ? 0.75 : active ? 1 : 0.62 },
               ]}
             >
-              <View style={[styles.missionIndex, { backgroundColor: mission.active ? colors.primary : colors.muted }]}>
-                {mission.active ? (
+              <View style={[styles.missionIndex, { backgroundColor: completed ? colors.success : active ? colors.primary : colors.muted }]}>
+                {completed ? (
+                  <Ionicons name="checkmark" size={14} color={colors.primaryForeground} />
+                ) : active ? (
                   <Text style={styles.missionIndexText}>{index + 1}</Text>
                 ) : (
                   <Ionicons name="lock-closed" size={14} color={colors.mutedForeground} />
                 )}
               </View>
-              <View style={[styles.missionIcon, { backgroundColor: iconBackground }]}>
-                <Ionicons name={mission.icon} size={23} color={iconColor} />
+              <View style={[styles.missionIcon, { backgroundColor: active ? colors.secondary : colors.muted }]}>
+                <Ionicons name={mission.icon as keyof typeof Ionicons.glyphMap} size={23} color={active ? colors.primary : colors.mutedForeground} />
               </View>
               <View style={styles.missionInfo}>
                 <Text style={[styles.missionRowTitle, { color: colors.foreground }]}>{mission.title}</Text>
-                <Text style={[styles.missionRowSubtitle, { color: colors.mutedForeground }]}>{mission.subtitle}</Text>
+                <Text style={[styles.missionRowSubtitle, { color: colors.mutedForeground }]}>
+                  {mission.unit} · {mission.topic}
+                </Text>
+                <Text style={[styles.missionSkills, { color: colors.primary }]}>
+                  {mission.skills.map((skill) => SKILLS.find((item) => item.id === skill)?.label).join(' · ')} · {mission.difficulty}
+                </Text>
               </View>
               <View style={styles.missionReward}>
                 <Ionicons name="star" size={13} color={colors.accentForeground} />
-                <Text style={[styles.missionXp, { color: colors.foreground }]}>{mission.xp}</Text>
-                <Ionicons name={mission.active ? 'chevron-forward' : 'lock-closed'} size={16} color={colors.mutedForeground} />
+                <Text style={[styles.missionXp, { color: colors.foreground }]}>85</Text>
+                <Ionicons name={active ? 'chevron-forward' : 'lock-closed'} size={16} color={colors.mutedForeground} />
               </View>
             </Pressable>
           );
@@ -166,6 +139,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 10,
   },
+  trackDescription: { fontFamily: 'Inter_400Regular', fontSize: 12, lineHeight: 17, marginTop: -7, marginBottom: 13 },
   missionList: {
     gap: 11,
   },
@@ -210,6 +184,7 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     marginTop: 3,
   },
+  missionSkills: { fontFamily: 'Inter_600SemiBold', fontSize: 9, textTransform: 'capitalize', marginTop: 4 },
   missionReward: {
     minWidth: 33,
     alignItems: 'center',

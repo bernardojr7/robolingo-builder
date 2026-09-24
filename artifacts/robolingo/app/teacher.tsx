@@ -6,13 +6,14 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { getListStudentProgressQueryKey, useListStudentProgress } from '@workspace/api-client-react';
 import { IconButton, PrimaryButton, RobotAvatar, Screen, SectionTitle, StatPill, TopBar } from '@/components/RobolingoUI';
 import { useAppState } from '@/context/AppContext';
+import { CURRICULUM_TRACKS } from '@/data/gameDesign';
 import { useColors } from '@/hooks/useColors';
 
 export default function TeacherScreen() {
   const colors = useColors();
   const router = useRouter();
   const { signOut } = useClerk();
-  const { player } = useAppState();
+  const { player, setCurriculumYear } = useAppState();
   const studentsQuery = useListStudentProgress({
     query: {
       enabled: player.profileRole === 'teacher',
@@ -81,6 +82,47 @@ export default function TeacherScreen() {
           </Text>
         </View>
         <Ionicons name="chevron-forward" size={19} color={colors.mutedForeground} />
+      </View>
+
+      <SectionTitle title="Trilha curricular da turma" />
+      <Text style={[styles.trackHelper, { color: colors.mutedForeground }]}>
+        Escolha a progressão pedagógica que aparece no mapa dos alunos.
+      </Text>
+      <View style={styles.trackList}>
+        {CURRICULUM_TRACKS.map((track) => {
+          const selected = player.curriculumYear === track.id;
+          return (
+            <Pressable
+              key={track.id}
+              onPress={() => setCurriculumYear(track.id)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected }}
+              style={({ pressed }) => [
+                styles.trackOption,
+                {
+                  backgroundColor: selected ? colors.secondary : colors.card,
+                  borderColor: selected ? colors.primary : colors.border,
+                  opacity: pressed ? 0.76 : 1,
+                },
+              ]}
+            >
+              <View style={[styles.trackBadge, { backgroundColor: selected ? colors.primary : colors.muted }]}>
+                <Text style={[styles.trackBadgeText, { color: selected ? colors.primaryForeground : colors.mutedForeground }]}>
+                  {track.id}
+                </Text>
+              </View>
+              <View style={styles.trackOptionCopy}>
+                <Text style={[styles.trackOptionTitle, { color: colors.foreground }]}>{track.label}</Text>
+                <Text style={[styles.trackOptionSubtitle, { color: colors.mutedForeground }]}>{track.subtitle}</Text>
+              </View>
+              <Ionicons
+                name={selected ? 'checkmark-circle' : 'ellipse-outline'}
+                size={21}
+                color={selected ? colors.primary : colors.mutedForeground}
+              />
+            </Pressable>
+          );
+        })}
       </View>
 
       <SectionTitle title="Progresso dos alunos" />
@@ -165,6 +207,14 @@ const styles = StyleSheet.create({
   classCopy: { flex: 1 },
   className: { fontFamily: 'Inter_700Bold', fontSize: 14 },
   classMeta: { fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 4 },
+  trackHelper: { fontFamily: 'Inter_400Regular', fontSize: 11, lineHeight: 16, marginTop: -7, marginBottom: 11 },
+  trackList: { gap: 8, marginBottom: 20 },
+  trackOption: { minHeight: 68, borderRadius: 18, borderWidth: 1, padding: 10, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  trackBadge: { width: 39, height: 39, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  trackBadgeText: { fontFamily: 'Inter_700Bold', fontSize: 14 },
+  trackOptionCopy: { flex: 1 },
+  trackOptionTitle: { fontFamily: 'Inter_700Bold', fontSize: 13 },
+  trackOptionSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 10, lineHeight: 14, marginTop: 3 },
   actionGrid: { flexDirection: 'row', gap: 9, marginBottom: 20 },
   actionCard: { flex: 1, minHeight: 119, borderWidth: 1, borderRadius: 19, padding: 14 },
   actionLabel: { fontFamily: 'Inter_700Bold', fontSize: 13, marginTop: 12 },

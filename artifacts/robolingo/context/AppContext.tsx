@@ -7,6 +7,7 @@ import {
   useUpdateMyProgress,
 } from '@workspace/api-client-react';
 import React, { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
+import type { CurriculumYearId } from '@/data/gameDesign';
 
 export type InterestId =
   | 'games'
@@ -57,6 +58,7 @@ type PlayerState = {
   streakDays: number;
   completedMissions: number;
   selectedThemes: InterestId[];
+  curriculumYear: CurriculumYearId;
   ownedItems: string[];
 };
 
@@ -75,6 +77,7 @@ const DEFAULT_STATE: PlayerState = {
   streakDays: 5,
   completedMissions: 7,
   selectedThemes: ['games', 'futebol', 'musica'],
+  curriculumYear: '6',
   ownedItems: ['hair_default', 'jacket_default'],
 };
 
@@ -91,6 +94,7 @@ type AppContextValue = {
     teacherClassName?: string;
   }) => void;
   toggleTheme: (theme: InterestId) => void;
+  setCurriculumYear: (year: CurriculumYearId) => void;
   completeMission: (isCorrect: boolean) => void;
   buyItem: (itemId: string, price: number) => boolean;
   hasItem: (itemId: string) => boolean;
@@ -233,6 +237,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             profileOwnerId: userId,
             name: current.name,
             selectedThemes: current.selectedThemes,
+            curriculumYear: current.curriculumYear,
           };
         });
       },
@@ -252,6 +257,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             ? current.selectedThemes.filter((item) => item !== theme)
             : [...current.selectedThemes, theme],
         }));
+      },
+      setCurriculumYear: (curriculumYear) => {
+        setPlayer((current) => ({ ...current, curriculumYear }));
       },
       completeMission: (isCorrect) => {
         setPlayer((current) => {
