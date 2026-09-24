@@ -2,5 +2,7 @@
 type ModuleMap = Record<string, () => Promise<Record<string, unknown>>>;
 export const modules: ModuleMap = {
   "./components/mockups/robolingo/MissionFocusSession.tsx": () => import("../components/mockups/robolingo/MissionFocusSession.tsx"),
-  "./components/mockups/robolingo/MissionOrbit.tsx": () => import("../components/mockups/robolingo/MissionOrbit.tsx")
+  "./components/mockups/robolingo/MissionFocusSessionTimed.tsx": () => import("../components/mockups/robolingo/MissionFocusSessionTimed.tsx"),
+  "./components/mockups/robolingo/MissionOrbit.tsx": () => import("../components/mockups/robolingo/MissionOrbit.tsx"),
+  "./components/mockups/robolingo/PeerCircleOrbit.tsx": () => import("../components/mockups/robolingo/PeerCircleOrbit.tsx")
 };
