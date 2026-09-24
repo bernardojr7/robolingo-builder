@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@clerk/expo';
+import NetInfo from '@react-native-community/netinfo';
 import {
   getGetMyProgressQueryKey,
   useGetMyProgress,
@@ -111,10 +112,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('offline');
   const [lastSyncedPayload, setLastSyncedPayload] = useState('');
   const [lastServerUpdatedAt, setLastServerUpdatedAt] = useState<string | null>(null);
+  const [isNetworkAvailable, setIsNetworkAvailable] = useState<boolean | null>(null);
+  const [reconnectGeneration, setReconnectGeneration] = useState(0);
   const latestMutationId = useRef(0);
   const latestHydrationId = useRef(0);
   const latestPlayer = useRef(player);
+  const networkAvailable = useRef<boolean | null>(null);
+  const progressSyncInFlight = useRef(false);
   latestPlayer.current = player;
+  networkAvailable.current = isNetworkAvailable;
   const activeAccountId = isSignedIn && userId ? userId : null;
   const progressQuery = useGetMyProgress({
     query: {
@@ -124,12 +130,55 @@ export function AppProvider({ children }: { children: ReactNode }) {
       queryKey: [...getGetMyProgressQueryKey(), userId ?? 'signed-out'],
     },
   });
-  const { mutate: mutateProgress } = useUpdateMyProgress({
+  const { isFetching: isProgressQueryFetching, refetch: refetchProgress } = progressQuery;
+  const {
+    mutate: mutateProgress,
+  } = useUpdateMyProgress({
     mutation: {
       retry: 3,
       retryDelay: 5_000,
     },
   });
+
+  useEffect(() => {
+    return NetInfo.addEventListener((state) => {
+      const available = state.isConnected === true && state.isInternetReachable !== false;
+      const wasOffline = networkAvailable.current === false;
+      networkAvailable.current = available;
+      setIsNetworkAvailable(available);
+      if (available && wasOffline) {
+        setReconnectGeneration((current) => current + 1);
+      }
+      if (!available && activeAccountId) {
+        setSyncStatus('offline');
+      }
+    });
+  }, [activeAccountId]);
+
+  useEffect(() => {
+    if (
+      isNetworkAvailable !== true ||
+      !activeAccountId ||
+      !hydrated ||
+      hydratedAccountId !== activeAccountId ||
+      reconnectGeneration === 0 ||
+      remoteSyncAllowed ||
+      isProgressQueryFetching
+    ) {
+      return;
+    }
+
+    void refetchProgress();
+  }, [
+    activeAccountId,
+    hydrated,
+    hydratedAccountId,
+    isProgressQueryFetching,
+    isNetworkAvailable,
+    reconnectGeneration,
+    refetchProgress,
+    remoteSyncAllowed,
+  ]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -155,6 +204,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setLastSyncedPayload('');
     setLastServerUpdatedAt(null);
     latestMutationId.current += 1;
+    progressSyncInFlight.current = false;
     setSyncStatus(accountId ? 'syncing' : 'offline');
     setPlayer(pendingProfile);
 
@@ -247,10 +297,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const payload = buildProgressPayload(player);
     const serializedPayload = serializeProgressPayload(payload);
-    if (serializedPayload === lastSyncedPayload) return;
+    if (serializedPayload === lastSyncedPayload) {
+      if (isNetworkAvailable !== false && syncStatus !== 'synced') {
+        setSyncStatus('synced');
+      }
+      return;
+    }
+    if (isNetworkAvailable === false || progressSyncInFlight.current) return;
 
     const mutationId = latestMutationId.current + 1;
     latestMutationId.current = mutationId;
+    progressSyncInFlight.current = true;
     const requestPayload = {
       ...payload,
       ...(lastServerUpdatedAt ? { updatedAt: lastServerUpdatedAt } : {}),
@@ -261,6 +318,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       {
         onSuccess: (savedProgress) => {
           if (mutationId !== latestMutationId.current) return;
+          progressSyncInFlight.current = false;
           setPlayer((current) => ({
             ...current,
             teacherClassCode: savedProgress.teacherClassCode,
@@ -276,7 +334,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         },
         onError: () => {
           if (mutationId !== latestMutationId.current) return;
-          setSyncStatus('error');
+          progressSyncInFlight.current = false;
+          setSyncStatus(networkAvailable.current === false ? 'offline' : 'error');
         },
       },
     );
@@ -285,6 +344,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     lastServerUpdatedAt,
     lastSyncedPayload,
     player,
+    isNetworkAvailable,
     activeAccountId,
     hydratedAccountId,
     remoteReady,
