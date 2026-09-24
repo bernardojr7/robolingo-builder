@@ -12,8 +12,16 @@ import {
   TopBar,
 } from '@/components/RobolingoUI';
 import { useAppState } from '@/context/AppContext';
-import { ACHIEVEMENTS, ENGLISH_LEVEL_REQUIREMENTS, ENGLISH_LEVELS, getEnglishLevel, REGIONS, SKILLS, type RegionId } from '@/data/gameDesign';
-import { getCurriculumMissions, getSkillProgress } from '@/data/missions';
+import {
+  ACHIEVEMENTS,
+  ENGLISH_LEVEL_REQUIREMENTS,
+  ENGLISH_LEVELS,
+  getEnglishLevel,
+  REGIONS,
+  SKILLS,
+  type RegionId,
+} from '@/data/gameDesign';
+import { getCurriculumMissionState, getCurriculumMissions, getSkillProgress } from '@/data/missions';
 import { useColors } from '@/hooks/useColors';
 
 export default function AdventureScreen() {
@@ -23,10 +31,14 @@ export default function AdventureScreen() {
   const [regionFilter, setRegionFilter] = useState<RegionId | 'all'>('all');
   const englishLevel = getEnglishLevel(player.level);
   const curriculumMissions = getCurriculumMissions();
-  const skillProgress = getSkillProgress(player.completedMissions);
+  const skillProgress = getSkillProgress(player.completedMissions, player.curriculumYear);
   const filteredMissions = useMemo(
-    () => curriculumMissions.filter((mission) => regionFilter === 'all' || mission.region === regionFilter),
-    [curriculumMissions, regionFilter],
+    () =>
+      getCurriculumMissions({
+        curriculumYear: player.curriculumYear,
+        region: regionFilter === 'all' ? undefined : regionFilter,
+      }),
+    [player.curriculumYear, regionFilter],
   );
 
   return (
@@ -172,8 +184,9 @@ export default function AdventureScreen() {
       <View style={styles.curriculumMissionList}>
         {filteredMissions.map((mission) => {
           const missionIndex = curriculumMissions.findIndex((item) => item.id === mission.id);
-          const completed = missionIndex < player.completedMissions;
-          const available = missionIndex <= player.completedMissions && player.level >= ENGLISH_LEVEL_REQUIREMENTS[mission.difficulty];
+          const state = getCurriculumMissionState(mission, player.completedMissions, player.level);
+          const completed = state === 'completed';
+          const available = state !== 'blocked';
           const level = ENGLISH_LEVELS.find((item) => item.id === mission.difficulty);
           return (
             <Pressable

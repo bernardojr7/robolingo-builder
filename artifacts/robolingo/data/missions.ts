@@ -1,5 +1,6 @@
-import type { InterestId } from '@/context/AppContext';
-import type { CurriculumYearId, EnglishLevelId, RegionId, SkillId } from '@/data/gameDesign';
+import type { InterestId } from '../context/AppContext';
+import { ENGLISH_LEVEL_REQUIREMENTS } from './gameDesign';
+import type { CurriculumYearId, EnglishLevelId, RegionId, SkillId } from './gameDesign';
 
 export type MissionMode = 'quiz' | 'listening' | 'speaking';
 
@@ -377,12 +378,37 @@ export function getDailyMission(selectedThemes: InterestId[], completedMissions:
   return MISSIONS[theme];
 }
 
-export function getCurriculumMissions(): DailyMission[] {
-  return Object.values(MISSIONS);
+export type CurriculumMissionFilters = {
+  region?: RegionId;
+  curriculumYear?: CurriculumYearId;
+};
+
+export type CurriculumMissionState = 'completed' | 'current' | 'blocked';
+
+export function getCurriculumMissions(filters: CurriculumMissionFilters = {}): DailyMission[] {
+  return Object.values(MISSIONS).filter(
+    (mission) =>
+      (!filters.region || mission.region === filters.region) &&
+      (!filters.curriculumYear || mission.year === filters.curriculumYear),
+  );
 }
 
 export function getMissionById(id: string | undefined): DailyMission | undefined {
   return getCurriculumMissions().find((mission) => mission.id === id);
+}
+
+export function getCurriculumMissionState(
+  mission: DailyMission,
+  completedMissions: number,
+  level: number,
+): CurriculumMissionState {
+  const curriculumMissions = getCurriculumMissions();
+  const missionIndex = curriculumMissions.findIndex((item) => item.id === mission.id);
+  const completedCount = Math.min(Math.max(completedMissions, 0), curriculumMissions.length);
+
+  if (missionIndex < 0 || missionIndex > completedCount) return 'blocked';
+  if (missionIndex < completedCount) return 'completed';
+  return level >= ENGLISH_LEVEL_REQUIREMENTS[mission.difficulty] ? 'current' : 'blocked';
 }
 
 export function getSkillProgress(

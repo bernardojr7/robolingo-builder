@@ -3,3 +3,4 @@
 - [Class code isolation](class-code-isolation.md) — class codes are server-owned, and legacy empty codes must never authorize student visibility.
 - [Development schema alignment](development-schema-alignment.md) — database-backed tests require the development schema to match the Drizzle source before diagnosing route failures.
 - [Expo audio challenges](expo-audio-challenges.md) — expo-audio needs expo-asset and a config plugin; expo-speech avoids remote audio dependencies.
+- [Expo data test runner](expo-data-test-runner.md) — cross-package tsx tests must avoid relying on the Expo app's @/ path aliases.
