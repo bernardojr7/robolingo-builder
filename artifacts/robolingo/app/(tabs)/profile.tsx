@@ -3,7 +3,7 @@ import { useClerk } from '@clerk/expo';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { RobotAvatar, Screen, SectionTitle, StatPill, TopBar } from '@/components/RobolingoUI';
+import { RobotAvatar, Screen, SectionTitle, StatPill, SyncStatusIndicator, TopBar } from '@/components/RobolingoUI';
 import { INTERESTS, useAppState } from '@/context/AppContext';
 import { CURRICULUM_TRACKS, SKILLS } from '@/data/gameDesign';
 import { getSkillProgress } from '@/data/missions';
@@ -13,7 +13,7 @@ export default function ProfileScreen() {
   const colors = useColors();
   const router = useRouter();
   const { signOut } = useClerk();
-  const { player, toggleTheme } = useAppState();
+  const { player, syncStatus, toggleTheme } = useAppState();
   const skillProgress = getSkillProgress(player.completedMissions);
   const track = CURRICULUM_TRACKS.find((item) => item.id === player.curriculumYear) ?? CURRICULUM_TRACKS[0];
   const handleSignOut = async () => {
@@ -31,6 +31,7 @@ export default function ProfileScreen() {
           </Pressable>
         }
       />
+      <SyncStatusIndicator status={syncStatus} />
       <View style={[styles.profileHero, { backgroundColor: colors.heroStart }]}>
         <RobotAvatar size={78} />
         <View style={styles.profileCopy}>

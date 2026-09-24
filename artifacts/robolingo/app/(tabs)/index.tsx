@@ -2,7 +2,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { MissionBanner, RobotAvatar, Screen, SectionTitle, StatPill, TopBar, ProgressBar } from '@/components/RobolingoUI';
+import {
+  MissionBanner,
+  RobotAvatar,
+  Screen,
+  SectionTitle,
+  StatPill,
+  SyncStatusIndicator,
+  TopBar,
+  ProgressBar,
+} from '@/components/RobolingoUI';
 import { INTERESTS, useAppState } from '@/context/AppContext';
 import { getDailyMission } from '@/data/missions';
 import { useColors } from '@/hooks/useColors';
@@ -10,7 +19,7 @@ import { useColors } from '@/hooks/useColors';
 export default function HomeScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { player } = useAppState();
+  const { player, syncStatus } = useAppState();
   const progress = (player.xp / player.xpNextLevel) * 100;
   const dailyMission = getDailyMission(player.selectedThemes, player.completedMissions);
 
@@ -29,6 +38,7 @@ export default function HomeScreen() {
           </Pressable>
         }
       />
+      <SyncStatusIndicator status={syncStatus} />
 
       <View style={[styles.welcomeRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.welcomeCopy}>

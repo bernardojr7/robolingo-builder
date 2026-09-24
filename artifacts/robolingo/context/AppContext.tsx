@@ -56,7 +56,7 @@ export type PlayerState = SyncablePlayerState & {
   curriculumYear: CurriculumYearId;
 };
 
-type SyncStatus = 'offline' | 'syncing' | 'synced' | 'error';
+export type SyncStatus = 'offline' | 'syncing' | 'synced' | 'error';
 
 const DEFAULT_STATE: PlayerState = {
   name: 'Alex',

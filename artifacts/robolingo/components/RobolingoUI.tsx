@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import type { DailyMission } from '@/data/missions';
+import type { SyncStatus } from '@/context/AppContext';
 import { useColors } from '@/hooks/useColors';
 
 const landscape = require('../assets/images/landscape.png');
@@ -90,6 +91,65 @@ export function TopBar({
         ) : null}
       </View>
       {right}
+    </View>
+  );
+}
+
+export function SyncStatusIndicator({ status }: { status: SyncStatus }) {
+  const colors = useColors();
+  const statusCopy = {
+    syncing: {
+      icon: 'cloud-upload-outline',
+      label: 'Sincronizando progresso',
+      detail: 'Suas alterações estão chegando ao servidor.',
+      color: colors.primary,
+      foreground: colors.primaryForeground,
+    },
+    synced: {
+      icon: 'cloud-done-outline',
+      label: 'Progresso salvo no servidor',
+      detail: 'Tudo certo por aqui.',
+      color: colors.success,
+      foreground: colors.primaryForeground,
+    },
+    offline: {
+      icon: 'phone-portrait-outline',
+      label: 'Salvo apenas neste aparelho',
+      detail: 'Vamos sincronizar quando a conexão voltar.',
+      color: colors.accent,
+      foreground: colors.accentForeground,
+    },
+    error: {
+      icon: 'cloud-offline-outline',
+      label: 'Temporariamente offline',
+      detail: 'Seu progresso está salvo neste aparelho por enquanto.',
+      color: colors.destructive,
+      foreground: colors.destructiveForeground,
+    },
+  } satisfies Record<
+    SyncStatus,
+    {
+      icon: keyof typeof Ionicons.glyphMap;
+      label: string;
+      detail: string;
+      color: string;
+      foreground: string;
+    }
+  >;
+  const copy = statusCopy[status];
+
+  return (
+    <View
+      testID="sync-status-indicator"
+      accessibilityRole="text"
+      accessibilityLabel={`${copy.label}. ${copy.detail}`}
+      style={[styles.syncStatus, { backgroundColor: copy.color }]}
+    >
+      <Ionicons name={copy.icon} size={19} color={copy.foreground} />
+      <View style={styles.syncStatusCopy}>
+        <Text style={[styles.syncStatusLabel, { color: copy.foreground }]}>{copy.label}</Text>
+        <Text style={[styles.syncStatusDetail, { color: copy.foreground }]}>{copy.detail}</Text>
+      </View>
     </View>
   );
 }
@@ -337,6 +397,29 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
     marginTop: 2,
+  },
+  syncStatus: {
+    borderRadius: 16,
+    paddingHorizontal: 13,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    marginBottom: 14,
+  },
+  syncStatusCopy: {
+    flex: 1,
+  },
+  syncStatusLabel: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 12,
+  },
+  syncStatusDetail: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 10,
+    lineHeight: 14,
+    marginTop: 2,
+    opacity: 0.86,
   },
   iconButton: {
     width: 42,
