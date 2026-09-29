@@ -1,5 +1,4 @@
 import { useEffect, useState, type ComponentType } from "react";
-
 import { modules as discoveredModules } from "./.generated/mockup-components";
 
 type ModuleMap = Record<string, () => Promise<Record<string, unknown>>>;
@@ -39,31 +38,27 @@ function PreviewRenderer({
       const key = `./components/mockups/${componentPath}.tsx`;
       const loader = modules[key];
       if (!loader) {
-        setError(`No component found at ${componentPath}.tsx`);
+        setError(`Nenhum componente encontrado em ${componentPath}.tsx`);
         return;
       }
 
       try {
         const mod = await loader();
-        if (cancelled) {
-          return;
-        }
+        if (cancelled) return;
+        
         const name = componentPath.split("/").pop()!;
         const comp = _resolveComponent(mod, name);
         if (!comp) {
           setError(
-            `No exported React component found in ${componentPath}.tsx\n\nMake sure the file has at least one exported function component.`,
+            `Nenhum componente React exportado encontrado em ${componentPath}.tsx`,
           );
           return;
         }
         setComponent(() => comp);
       } catch (e) {
-        if (cancelled) {
-          return;
-        }
-
+        if (cancelled) return;
         const message = e instanceof Error ? e.message : String(e);
-        setError(`Failed to load preview.\n${message}`);
+        setError(`Falha ao carregar componente.\n${message}`);
       }
     }
 
@@ -91,27 +86,51 @@ function getBasePath(): string {
   return import.meta.env.BASE_URL.replace(/\/$/, "");
 }
 
-function getPreviewExamplePath(): string {
-  const basePath = getBasePath();
-  return `${basePath}/preview/ComponentName`;
+// Mapeia automaticamente todos os componentes disponíveis no projeto
+function getAvailableComponents(): string[] {
+  return Object.keys(discoveredModules).map((key) =>
+    key.replace(/^\.\/components\/mockups\//, "").replace(/\.tsx$/, "")
+  );
 }
 
 function Gallery() {
+  const basePath = getBasePath();
+  const components = getAvailableComponents();
+
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
-      <div className="text-center max-w-md">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-3">
-          Component Preview Server
-        </h1>
-        <p className="text-gray-500 mb-4">
-          This server renders individual components for the workspace canvas.
-        </p>
-        <p className="text-sm text-gray-400">
-          Access component previews at{" "}
-          <code className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">
-            {getPreviewExamplePath()}
-          </code>
-        </p>
+    <div className="min-h-screen bg-slate-900 text-white p-8 font-sans">
+      <div className="max-w-4xl mx-auto">
+        <header className="mb-8 border-b border-slate-800 pb-6">
+          <h1 className="text-3xl font-bold tracking-tight text-indigo-400">
+            Robolingo Builder — Galeria
+          </h1>
+          <p className="text-slate-400 mt-2">
+            Selecione uma tela ou componente abaixo para visualizar:
+          </p>
+        </header>
+
+        {components.length === 0 ? (
+          <p className="text-slate-500">Nenhum componente encontrado.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {components.map((name) => (
+              <a
+                key={name}
+                href={`${basePath}/preview/${name}`}
+                className="group block p-5 bg-slate-800/80 hover:bg-slate-800 rounded-xl border border-slate-700/60 hover:border-indigo-500 transition-all duration-200 shadow-lg"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-slate-200 group-hover:text-indigo-400 transition-colors">
+                    {name}
+                  </span>
+                  <span className="text-xs font-mono text-slate-500 group-hover:text-indigo-400">
+                    &rarr;
+                  </span>
+                </div>
+              </a>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -140,6 +159,7 @@ function App() {
     );
   }
 
+  // Exibe a galeria com todos os componentes clicáveis ao acessar a raiz "/"
   return <Gallery />;
 }
 
