@@ -16,6 +16,10 @@
       "destination": "/artifacts/api-server/$1"
     },
     {
+      "source": "/preview/(.*)",
+      "destination": "/artifacts/mockup-sandbox/index.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/artifacts/mockup-sandbox/$1"
     }
